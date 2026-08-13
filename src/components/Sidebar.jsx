@@ -8,15 +8,31 @@ import {
   FaBookOpen,
   FaMoneyBillWave,
   FaCalendarCheck,
+  FaUserTie,
+  FaExchangeAlt,
+  FaChartLine,
 } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 
+// Admin: full academy control, including teacher management and finances.
+const adminLinks = [
+  { to: "/admin/dashboard", label: "Dashboard", icon: FaThLarge },
+  { to: "/admin/teachers", label: "Teachers", icon: FaUserTie },
+  { to: "/admin/assign-students", label: "Assign Students", icon: FaExchangeAlt },
+  { to: "/admin/students", label: "All Students", icon: FaUsers },
+  { to: "/admin/tests", label: "Tests", icon: FaClipboardList },
+  { to: "/admin/assignments", label: "Assignments", icon: FaBookOpen },
+  { to: "/admin/fees", label: "Fees", icon: FaMoneyBillWave },
+  { to: "/admin/attendance", label: "Attendance", icon: FaCalendarCheck },
+  { to: "/admin/teacher-performance", label: "Teacher Performance", icon: FaChartLine },
+];
+
+// Teacher: scoped strictly to their own assigned students. No fees, ever.
 const teacherLinks = [
   { to: "/teacher/dashboard", label: "Dashboard", icon: FaThLarge },
-  { to: "/teacher/students", label: "Students", icon: FaUsers },
+  { to: "/teacher/students", label: "My Students", icon: FaUsers },
   { to: "/teacher/tests", label: "Tests", icon: FaClipboardList },
   { to: "/teacher/assignments", label: "Assignments", icon: FaBookOpen },
-  { to: "/teacher/fees", label: "Fees", icon: FaMoneyBillWave },
   { to: "/teacher/attendance", label: "Attendance", icon: FaCalendarCheck },
 ];
 
@@ -29,20 +45,14 @@ const studentLinks = [
 
 const Sidebar = ({ open, onClose }) => {
   const { role } = useAuth();
-  const links = role === "teacher" ? teacherLinks : studentLinks;
+  const links = role === "admin" ? adminLinks : role === "teacher" ? teacherLinks : studentLinks;
 
   return (
     <>
-      {/* Mobile overlay */}
-      {open && (
-        <div
-          className="fixed inset-0 bg-black/40 z-30 lg:hidden"
-          onClick={onClose}
-        />
-      )}
+      {open && <div className="fixed inset-0 bg-black/40 z-30 lg:hidden" onClick={onClose} />}
 
       <aside
-        className={`fixed lg:static z-40 top-0 left-0 h-full w-64 bg-navy flex flex-col p-5 transition-transform duration-300 ${
+        className={`fixed lg:static z-40 top-0 left-0 h-full w-64 bg-navy flex flex-col p-5 transition-transform duration-300 overflow-y-auto ${
           open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
@@ -69,9 +79,7 @@ const Sidebar = ({ open, onClose }) => {
           ))}
         </nav>
 
-        <div className="text-slate-500 text-xs px-2">
-          Learn Today. Lead Tomorrow.
-        </div>
+        <div className="text-slate-500 text-xs px-2">Learn Today. Lead Tomorrow.</div>
       </aside>
     </>
   );

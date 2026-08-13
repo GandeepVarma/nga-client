@@ -2,9 +2,15 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-// Wraps a page and redirects to /login if not authenticated,
-// or blocks access if the logged-in role doesn't match allowedRole.
-const ProtectedRoute = ({ children, allowedRole }) => {
+const homeFor = (role) => {
+  if (role === "admin") return "/admin/dashboard";
+  if (role === "teacher") return "/teacher/dashboard";
+  return "/student/dashboard";
+};
+
+// allowedRoles: array of role strings this route is open to, e.g.
+// ["admin"], ["teacher"], ["admin", "teacher"], or ["student"].
+const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, role, loading } = useAuth();
 
   if (loading) {
@@ -16,8 +22,8 @@ const ProtectedRoute = ({ children, allowedRole }) => {
   }
 
   if (!user) return <Navigate to="/login" replace />;
-  if (allowedRole && role !== allowedRole) {
-    return <Navigate to={role === "teacher" ? "/teacher/dashboard" : "/student/dashboard"} replace />;
+  if (allowedRoles && !allowedRoles.includes(role)) {
+    return <Navigate to={homeFor(role)} replace />;
   }
 
   return children;

@@ -3,23 +3,13 @@ import { useParams, Link } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { Line } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Tooltip,
-  Legend,
-} from "chart.js";
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend } from "chart.js";
 import DashboardLayout from "../components/DashboardLayout";
 import api from "../api/axios";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend);
 
-const tabs = ["Personal", "Fees", "Performance", "Attendance", "Assignments"];
-
-const StudentProfile = () => {
+const StudentProfile = ({ basePath = "/teacher" }) => {
   const { id } = useParams();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -50,21 +40,15 @@ const StudentProfile = () => {
   }
 
   const { personalDetails: p, feeDetails, performance, attendance, assignments } = profile;
+  // feeDetails is null when the requester is a Teacher (RBAC: no fee access)
+  const tabs = ["Personal", ...(feeDetails !== null ? ["Fees"] : []), "Performance", "Attendance", "Assignments"];
 
   const chartData = {
-    labels: performance
-      .filter((t) => t.marksObtained !== null)
-      .slice(0, 8)
-      .reverse()
-      .map((t) => t.testName),
+    labels: performance.filter((t) => t.marksObtained !== null).slice(0, 8).reverse().map((t) => t.testName),
     datasets: [
       {
         label: "% Score",
-        data: performance
-          .filter((t) => t.marksObtained !== null)
-          .slice(0, 8)
-          .reverse()
-          .map((t) => Number(((t.marksObtained / t.maxMarks) * 100).toFixed(1))),
+        data: performance.filter((t) => t.marksObtained !== null).slice(0, 8).reverse().map((t) => Number(((t.marksObtained / t.maxMarks) * 100).toFixed(1))),
         borderColor: "#F59E0B",
         backgroundColor: "rgba(245, 158, 11, 0.15)",
         tension: 0.35,
@@ -75,7 +59,7 @@ const StudentProfile = () => {
 
   return (
     <DashboardLayout title="Student Profile">
-      <Link to="/teacher/students" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-navy dark:hover:text-white mb-4">
+      <Link to={`${basePath}/students`} className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-navy dark:hover:text-white mb-4">
         <FaArrowLeft /> Back to Students
       </Link>
 
@@ -87,9 +71,7 @@ const StudentProfile = () => {
           <h2 className="font-display font-bold text-xl text-navy dark:text-white">{p.name}</h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm">
             {p.studentId} &middot; {p.class} &middot;{" "}
-            <span className={p.status === "Active" ? "text-emerald-500" : "text-slate-400"}>
-              {p.status}
-            </span>
+            <span className={p.status === "Active" ? "text-emerald-500" : "text-slate-400"}>{p.status}</span>
           </p>
         </div>
       </div>
@@ -100,9 +82,7 @@ const StudentProfile = () => {
             key={t}
             onClick={() => setTab(t)}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-              tab === t
-                ? "bg-navy text-white dark:bg-gold dark:text-navy"
-                : "bg-white dark:bg-navy-light text-slate-500 dark:text-slate-400"
+              tab === t ? "bg-navy text-white dark:bg-gold dark:text-navy" : "bg-white dark:bg-navy-light text-slate-500 dark:text-slate-400"
             }`}
           >
             {t}
@@ -115,13 +95,12 @@ const StudentProfile = () => {
           <Info label="Parent Name" value={p.parentName} />
           <Info label="Phone Number" value={p.phone} />
           <Info label="Date of Joining" value={new Date(p.dateOfJoining).toDateString()} />
-          <Info label="Monthly Fee" value={`₹${p.monthlyFee}`} />
-          <Info label="Admission Fee" value={`₹${p.admissionFee}`} />
+          <Info label="Batch" value={p.batch || "-"} />
           <Info label="Status" value={p.status} />
         </div>
       )}
 
-      {tab === "Fees" && (
+      {tab === "Fees" && feeDetails && (
         <div className="card p-0 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -146,11 +125,7 @@ const StudentProfile = () => {
                     <td className="py-3 px-4">₹{f.pending}</td>
                     <td className="py-3 px-4">₹{f.carryForward}</td>
                     <td className="py-3 px-4">
-                      <span className={`badge ${
-                        f.status === "Paid" ? "bg-emerald-100 text-emerald-700" :
-                        f.status === "Partial" ? "bg-amber-100 text-amber-700" :
-                        "bg-red-100 text-red-700"
-                      }`}>{f.status}</span>
+                      <span className={`badge ${f.status === "Paid" ? "bg-emerald-100 text-emerald-700" : f.status === "Partial" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>{f.status}</span>
                     </td>
                   </tr>
                 ))
@@ -174,18 +149,13 @@ const StudentProfile = () => {
       {tab === "Attendance" && (
         <div className="card">
           <p className="mb-4 text-sm text-slate-500">
-            Attendance Percentage:{" "}
-            <span className="font-bold text-navy dark:text-white text-lg">{attendance.percentage}%</span>
+            Attendance Percentage: <span className="font-bold text-navy dark:text-white text-lg">{attendance.percentage}%</span>
           </p>
           <div className="max-h-72 overflow-y-auto space-y-2">
             {attendance.records.map((r) => (
               <div key={r._id} className="flex justify-between text-sm border-b border-slate-50 dark:border-navy-lighter/50 py-2">
                 <span>{new Date(r.date).toDateString()}</span>
-                <span className={`badge ${
-                  r.status === "Present" ? "bg-emerald-100 text-emerald-700" :
-                  r.status === "Absent" ? "bg-red-100 text-red-700" :
-                  "bg-amber-100 text-amber-700"
-                }`}>{r.status}</span>
+                <span className={`badge ${r.status === "Present" ? "bg-emerald-100 text-emerald-700" : r.status === "Absent" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>{r.status}</span>
               </div>
             ))}
           </div>

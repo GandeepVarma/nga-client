@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import DashboardLayout from "../components/DashboardLayout";
 import api from "../api/axios";
+import { useAuth } from "../context/AuthContext";
 
 const emptyForm = {
   studentId: "",
@@ -11,13 +12,19 @@ const emptyForm = {
   parentName: "",
   phone: "",
   class: "",
+  batch: "",
   password: "",
   monthlyFee: "",
   admissionFee: "",
+  assignedTeacher: "",
 };
 
-const StudentManagement = () => {
+const StudentManagement = ({ basePath = "/teacher" }) => {
+  const { role } = useAuth();
+  const isAdmin = role === "admin";
+
   const [students, setStudents] = useState([]);
+  const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] = useState("");
@@ -45,6 +52,12 @@ const StudentManagement = () => {
     return () => clearTimeout(debounce);
   }, [fetchStudents]);
 
+  useEffect(() => {
+    if (isAdmin) {
+      api.get("/admin/teachers").then((res) => setTeachers(res.data.data)).catch(() => {});
+    }
+  }, [isAdmin]);
+
   const openAddModal = () => {
     setForm(emptyForm);
     setEditingId(null);
@@ -58,9 +71,11 @@ const StudentManagement = () => {
       parentName: student.parentName,
       phone: student.phone,
       class: student.class,
+      batch: student.batch || "",
       password: "",
       monthlyFee: student.monthlyFee,
       admissionFee: student.admissionFee,
+      assignedTeacher: student.assignedTeacher?._id || student.assignedTeacher || "",
     });
     setEditingId(student._id);
     setShowModal(true);
@@ -73,10 +88,13 @@ const StudentManagement = () => {
       if (editingId) {
         const payload = { ...form };
         if (!payload.password) delete payload.password;
+        if (!isAdmin) delete payload.assignedTeacher; // teachers can't reassign
         await api.put(`/students/${editingId}`, payload);
         toast.success("Student updated");
       } else {
-        await api.post("/students", form);
+        const payload = { ...form };
+        if (!isAdmin) delete payload.assignedTeacher; // auto-assigned to self server-side
+        await api.post("/students", payload);
         toast.success("Student added");
       }
       setShowModal(false);
@@ -100,7 +118,7 @@ const StudentManagement = () => {
   };
 
   return (
-    <DashboardLayout title="Student Management">
+    <DashboardLayout title={isAdmin ? "All Students" : "My Students"}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <div className="flex flex-1 gap-3">
           <div className="relative flex-1 max-w-sm">
@@ -132,47 +150,32 @@ const StudentManagement = () => {
               <th className="py-3 px-4">Name</th>
               <th className="py-3 px-4">Class</th>
               <th className="py-3 px-4">Phone</th>
+              {isAdmin && <th className="py-3 px-4">Teacher</th>}
               <th className="py-3 px-4">Status</th>
               <th className="py-3 px-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr>
-                <td colSpan={6} className="text-center py-10 text-slate-400">
-                  Loading students...
-                </td>
-              </tr>
+              <tr><td colSpan={7} className="text-center py-10 text-slate-400">Loading students...</td></tr>
             ) : students.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="text-center py-10 text-slate-400">
-                  No students found.
-                </td>
-              </tr>
+              <tr><td colSpan={7} className="text-center py-10 text-slate-400">No students found.</td></tr>
             ) : (
               students.map((s) => (
-                <tr
-                  key={s._id}
-                  className="border-b border-slate-50 dark:border-navy-lighter/50 hover:bg-slate-50 dark:hover:bg-navy-lighter/40"
-                >
+                <tr key={s._id} className="border-b border-slate-50 dark:border-navy-lighter/50 hover:bg-slate-50 dark:hover:bg-navy-lighter/40">
                   <td className="py-3 px-4 font-medium text-navy dark:text-white">{s.studentId}</td>
                   <td className="py-3 px-4">{s.name}</td>
                   <td className="py-3 px-4">{s.class}</td>
                   <td className="py-3 px-4">{s.phone}</td>
+                  {isAdmin && <td className="py-3 px-4">{s.assignedTeacher?.name || "—"}</td>}
                   <td className="py-3 px-4">
-                    <span
-                      className={`badge ${
-                        s.status === "Active"
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-slate-200 text-slate-600"
-                      }`}
-                    >
+                    <span className={`badge ${s.status === "Active" ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600"}`}>
                       {s.status}
                     </span>
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center justify-end gap-3 text-slate-500">
-                      <Link to={`/teacher/students/${s._id}`} title="View profile">
+                      <Link to={`${basePath}/students/${s._id}`} title="View profile">
                         <FaEye className="hover:text-blue-500" />
                       </Link>
                       <button onClick={() => openEditModal(s)} title="Edit">
@@ -199,93 +202,57 @@ const StudentManagement = () => {
             <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
               <div className="col-span-1">
                 <label className="text-sm font-medium">Student ID</label>
-                <input
-                  className="input-field mt-1"
-                  required
-                  disabled={!!editingId}
-                  value={form.studentId}
-                  onChange={(e) => setForm({ ...form, studentId: e.target.value })}
-                />
+                <input className="input-field mt-1" required disabled={!!editingId} value={form.studentId} onChange={(e) => setForm({ ...form, studentId: e.target.value })} />
               </div>
               <div className="col-span-1">
                 <label className="text-sm font-medium">Class</label>
-                <input
-                  className="input-field mt-1"
-                  required
-                  value={form.class}
-                  onChange={(e) => setForm({ ...form, class: e.target.value })}
-                />
+                <input className="input-field mt-1" required value={form.class} onChange={(e) => setForm({ ...form, class: e.target.value })} />
               </div>
               <div className="col-span-2">
                 <label className="text-sm font-medium">Full Name</label>
-                <input
-                  className="input-field mt-1"
-                  required
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                />
+                <input className="input-field mt-1" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
               </div>
               <div className="col-span-1">
                 <label className="text-sm font-medium">Parent Name</label>
-                <input
-                  className="input-field mt-1"
-                  required
-                  value={form.parentName}
-                  onChange={(e) => setForm({ ...form, parentName: e.target.value })}
-                />
+                <input className="input-field mt-1" required value={form.parentName} onChange={(e) => setForm({ ...form, parentName: e.target.value })} />
               </div>
               <div className="col-span-1">
                 <label className="text-sm font-medium">Phone</label>
-                <input
-                  className="input-field mt-1"
-                  required
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                />
+                <input className="input-field mt-1" required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
               </div>
               <div className="col-span-1">
+                <label className="text-sm font-medium">Batch</label>
+                <input className="input-field mt-1" value={form.batch} onChange={(e) => setForm({ ...form, batch: e.target.value })} />
+              </div>
+              {isAdmin && (
+                <div className="col-span-1">
+                  <label className="text-sm font-medium">Assigned Teacher</label>
+                  <select className="input-field mt-1" required value={form.assignedTeacher} onChange={(e) => setForm({ ...form, assignedTeacher: e.target.value })}>
+                    <option value="">Select teacher...</option>
+                    {teachers.map((t) => (
+                      <option key={t._id} value={t._id}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <div className="col-span-1">
                 <label className="text-sm font-medium">Monthly Fee</label>
-                <input
-                  type="number"
-                  className="input-field mt-1"
-                  required
-                  value={form.monthlyFee}
-                  onChange={(e) => setForm({ ...form, monthlyFee: e.target.value })}
-                />
+                <input type="number" className="input-field mt-1" required value={form.monthlyFee} onChange={(e) => setForm({ ...form, monthlyFee: e.target.value })} />
               </div>
               <div className="col-span-1">
                 <label className="text-sm font-medium">Admission Fee</label>
-                <input
-                  type="number"
-                  className="input-field mt-1"
-                  value={form.admissionFee}
-                  onChange={(e) => setForm({ ...form, admissionFee: e.target.value })}
-                />
+                <input type="number" className="input-field mt-1" value={form.admissionFee} onChange={(e) => setForm({ ...form, admissionFee: e.target.value })} />
               </div>
               <div className="col-span-2">
                 <label className="text-sm font-medium">
                   {editingId ? "New Password (leave blank to keep current)" : "Password"}
                 </label>
-                <input
-                  type="password"
-                  className="input-field mt-1"
-                  required={!editingId}
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                />
+                <input type="password" className="input-field mt-1" required={!editingId} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
               </div>
 
               <div className="col-span-2 flex justify-end gap-3 mt-2">
-                <button
-                  type="button"
-                  className="btn-outline"
-                  onClick={() => setShowModal(false)}
-                >
-                  Cancel
-                </button>
-                <button type="submit" disabled={saving} className="btn-primary">
-                  {saving ? "Saving..." : "Save Student"}
-                </button>
+                <button type="button" className="btn-outline" onClick={() => setShowModal(false)}>Cancel</button>
+                <button type="submit" disabled={saving} className="btn-primary">{saving ? "Saving..." : "Save Student"}</button>
               </div>
             </form>
           </div>

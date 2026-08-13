@@ -5,21 +5,21 @@ import { FaGraduationCap, FaUserTie, FaUserGraduate } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
-  const [mode, setMode] = useState("teacher"); // "teacher" | "student"
+  const [mode, setMode] = useState("staff"); // "staff" (admin or teacher) | "student"
   const [email, setEmail] = useState("");
   const [studentId, setStudentId] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { loginTeacher, loginStudent } = useAuth();
+  const { loginStaff, loginStudent } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      if (mode === "teacher") {
-        await loginTeacher(email, password);
-        navigate("/teacher/dashboard");
+      if (mode === "staff") {
+        const data = await loginStaff(email, password);
+        navigate(data.role === "admin" ? "/admin/dashboard" : "/teacher/dashboard");
       } else {
         await loginStudent(studentId, password);
         navigate("/student/dashboard");
@@ -34,13 +34,11 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex bg-navy">
-      {/* Left brand panel */}
       <div className="hidden lg:flex flex-col justify-between w-1/2 p-14 relative overflow-hidden bg-navy">
         <div
           className="absolute inset-0 opacity-[0.07]"
           style={{
-            backgroundImage:
-              "radial-gradient(circle at 2px 2px, #F59E0B 1.5px, transparent 0)",
+            backgroundImage: "radial-gradient(circle at 2px 2px, #F59E0B 1.5px, transparent 0)",
             backgroundSize: "28px 28px",
           }}
         />
@@ -60,18 +58,15 @@ const Login = () => {
             <span className="text-gold">Lead Tomorrow.</span>
           </h1>
           <p className="text-slate-400 leading-relaxed">
-            A single place for teachers and students to track tests,
+            A single place for admins, teachers, and students to track tests,
             assignments, fees, and attendance — built around Mathematics
             coaching, made to grow with every subject after.
           </p>
         </div>
 
-        <p className="relative z-10 text-slate-500 text-sm">
-          Founded by Gandeep Varma Ganaraju
-        </p>
+        <p className="relative z-10 text-slate-500 text-sm">Founded by Gandeep Varma Ganaraju</p>
       </div>
 
-      {/* Right form panel */}
       <div className="flex-1 flex items-center justify-center p-6 bg-slate-50 dark:bg-navy">
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-3 mb-8 justify-center">
@@ -84,24 +79,20 @@ const Login = () => {
           </div>
 
           <div className="bg-white dark:bg-navy-light rounded-xl2 shadow-card p-8">
-            <h2 className="font-display text-2xl font-bold text-navy dark:text-white mb-1">
-              Sign in
-            </h2>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
-              Choose your role to continue
-            </p>
+            <h2 className="font-display text-2xl font-bold text-navy dark:text-white mb-1">Sign in</h2>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">Choose your role to continue</p>
 
             <div className="grid grid-cols-2 gap-2 mb-6 p-1 bg-slate-100 dark:bg-navy rounded-lg">
               <button
                 type="button"
-                onClick={() => setMode("teacher")}
+                onClick={() => setMode("staff")}
                 className={`flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-semibold transition-colors ${
-                  mode === "teacher"
+                  mode === "staff"
                     ? "bg-white dark:bg-navy-lighter text-navy dark:text-white shadow"
                     : "text-slate-500 dark:text-slate-400"
                 }`}
               >
-                <FaUserTie /> Teacher
+                <FaUserTie /> Admin / Teacher
               </button>
               <button
                 type="button"
@@ -117,7 +108,7 @@ const Login = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {mode === "teacher" ? (
+              {mode === "staff" ? (
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                     Email
