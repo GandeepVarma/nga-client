@@ -11,6 +11,7 @@ import {
   FaUserTie,
   FaExchangeAlt,
   FaChartLine,
+  FaLaptopCode,
 } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 
@@ -21,6 +22,7 @@ const adminLinks = [
   { to: "/admin/assign-students", label: "Assign Students", icon: FaExchangeAlt },
   { to: "/admin/students", label: "All Students", icon: FaUsers },
   { to: "/admin/tests", label: "Tests", icon: FaClipboardList },
+  { to: "/admin/online-tests", label: "Online MCQ Tests", icon: FaLaptopCode },
   { to: "/admin/assignments", label: "Assignments", icon: FaBookOpen },
   { to: "/admin/fees", label: "Fees", icon: FaMoneyBillWave },
   { to: "/admin/attendance", label: "Attendance", icon: FaCalendarCheck },
@@ -32,6 +34,7 @@ const teacherLinks = [
   { to: "/teacher/dashboard", label: "Dashboard", icon: FaThLarge },
   { to: "/teacher/students", label: "My Students", icon: FaUsers },
   { to: "/teacher/tests", label: "Tests", icon: FaClipboardList },
+  { to: "/teacher/online-tests", label: "Online MCQ Tests", icon: FaLaptopCode },
   { to: "/teacher/assignments", label: "Assignments", icon: FaBookOpen },
   { to: "/teacher/attendance", label: "Attendance", icon: FaCalendarCheck },
 ];
@@ -39,6 +42,7 @@ const teacherLinks = [
 const studentLinks = [
   { to: "/student/dashboard", label: "Dashboard", icon: FaThLarge },
   { to: "/student/tests", label: "My Tests", icon: FaClipboardList },
+  { to: "/student/online-tests", label: "Online Tests", icon: FaLaptopCode },
   { to: "/student/assignments", label: "Assignments", icon: FaBookOpen },
   { to: "/student/fees", label: "Fee Status", icon: FaMoneyBillWave },
 ];
