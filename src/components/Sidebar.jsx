@@ -12,6 +12,9 @@ import {
   FaExchangeAlt,
   FaChartLine,
   FaLaptopCode,
+  FaWhatsapp,
+  FaHistory,
+  FaCog,
 } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 
@@ -27,6 +30,9 @@ const adminLinks = [
   { to: "/admin/fees", label: "Fees", icon: FaMoneyBillWave },
   { to: "/admin/attendance", label: "Attendance", icon: FaCalendarCheck },
   { to: "/admin/teacher-performance", label: "Teacher Performance", icon: FaChartLine },
+  { to: "/admin/whatsapp/broadcast", label: "Broadcast", icon: FaWhatsapp },
+  { to: "/admin/whatsapp/logs", label: "WhatsApp Logs", icon: FaHistory },
+  { to: "/admin/whatsapp/settings", label: "WhatsApp Settings", icon: FaCog },
 ];
 
 // Teacher: scoped strictly to their own assigned students. No fees, ever.
@@ -37,6 +43,8 @@ const teacherLinks = [
   { to: "/teacher/online-tests", label: "Online MCQ Tests", icon: FaLaptopCode },
   { to: "/teacher/assignments", label: "Assignments", icon: FaBookOpen },
   { to: "/teacher/attendance", label: "Attendance", icon: FaCalendarCheck },
+  { to: "/teacher/whatsapp/broadcast", label: "Broadcast", icon: FaWhatsapp },
+  { to: "/teacher/whatsapp/logs", label: "WhatsApp Logs", icon: FaHistory },
 ];
 
 const studentLinks = [

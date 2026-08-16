@@ -22,6 +22,9 @@ import OnlineTestManagement from "./pages/OnlineTestManagement";
 import OnlineTestBuilder from "./pages/OnlineTestBuilder";
 import OnlineTestAnalytics from "./pages/OnlineTestAnalytics";
 import OnlineTestSubmissions from "./pages/OnlineTestSubmissions";
+import WhatsAppSettings from "./pages/WhatsAppSettings";
+import WhatsAppLogs from "./pages/WhatsAppLogs";
+import BroadcastMessage from "./pages/BroadcastMessage";
 
 // Teacher-only
 import TeacherDashboard from "./pages/TeacherDashboard";
@@ -58,6 +61,9 @@ function App() {
         <Route path="/admin/online-tests/:id/edit" element={<ProtectedRoute allowedRoles={["admin"]}><OnlineTestBuilder basePath="/admin" /></ProtectedRoute>} />
         <Route path="/admin/online-tests/:id/analytics" element={<ProtectedRoute allowedRoles={["admin"]}><OnlineTestAnalytics basePath="/admin" /></ProtectedRoute>} />
         <Route path="/admin/online-tests/:id/submissions" element={<ProtectedRoute allowedRoles={["admin"]}><OnlineTestSubmissions basePath="/admin" /></ProtectedRoute>} />
+        <Route path="/admin/whatsapp/settings" element={<ProtectedRoute allowedRoles={["admin"]}><WhatsAppSettings /></ProtectedRoute>} />
+        <Route path="/admin/whatsapp/logs" element={<ProtectedRoute allowedRoles={["admin"]}><WhatsAppLogs /></ProtectedRoute>} />
+        <Route path="/admin/whatsapp/broadcast" element={<ProtectedRoute allowedRoles={["admin"]}><BroadcastMessage /></ProtectedRoute>} />
 
         {/* ---------------- TEACHER ---------------- */}
         {/* No fee routes here at all, by design — teachers have zero fee access */}
@@ -72,6 +78,8 @@ function App() {
         <Route path="/teacher/online-tests/:id/edit" element={<ProtectedRoute allowedRoles={["teacher"]}><OnlineTestBuilder basePath="/teacher" /></ProtectedRoute>} />
         <Route path="/teacher/online-tests/:id/analytics" element={<ProtectedRoute allowedRoles={["teacher"]}><OnlineTestAnalytics basePath="/teacher" /></ProtectedRoute>} />
         <Route path="/teacher/online-tests/:id/submissions" element={<ProtectedRoute allowedRoles={["teacher"]}><OnlineTestSubmissions basePath="/teacher" /></ProtectedRoute>} />
+        <Route path="/teacher/whatsapp/logs" element={<ProtectedRoute allowedRoles={["teacher"]}><WhatsAppLogs /></ProtectedRoute>} />
+        <Route path="/teacher/whatsapp/broadcast" element={<ProtectedRoute allowedRoles={["teacher"]}><BroadcastMessage /></ProtectedRoute>} />
 
         {/* ---------------- STUDENT ---------------- */}
         <Route path="/student/dashboard" element={<ProtectedRoute allowedRoles={["student"]}><StudentDashboard /></ProtectedRoute>} />

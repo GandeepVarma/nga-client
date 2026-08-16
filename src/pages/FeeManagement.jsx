@@ -17,7 +17,9 @@ const FeeManagement = () => {
   const [monthFilter, setMonthFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [generateMonth, setGenerateMonth] = useState(currentMonthStr());
+  const [generateDueDate, setGenerateDueDate] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [remindingId, setRemindingId] = useState(null);
   const [payModal, setPayModal] = useState(null);
   const [payAmount, setPayAmount] = useState("");
   const [payMode, setPayMode] = useState("Cash");
@@ -50,13 +52,25 @@ const FeeManagement = () => {
     e.preventDefault();
     setGenerating(true);
     try {
-      const res = await api.post("/fees/generate", { month: generateMonth });
+      const res = await api.post("/fees/generate", { month: generateMonth, dueDate: generateDueDate || undefined });
       toast.success(res.data.message);
       fetchFees(); fetchSummary();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to generate fees");
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleSendReminder = async (feeId) => {
+    setRemindingId(feeId);
+    try {
+      const res = await api.post(`/fees/${feeId}/remind`);
+      toast[res.data.success ? "success" : "error"](res.data.success ? "WhatsApp reminder sent" : "Reminder failed to send");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to send reminder");
+    } finally {
+      setRemindingId(null);
     }
   };
 
@@ -95,6 +109,7 @@ const FeeManagement = () => {
         <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Creates a fee record for every active student for the selected month, automatically carrying forward any unpaid balance. Safe to re-run.</p>
         <form onSubmit={handleGenerate} className="flex flex-wrap items-end gap-3">
           <div><label className="text-sm font-medium block mb-1">Month</label><input type="month" className="input-field" value={generateMonth} onChange={(e) => setGenerateMonth(e.target.value)} required /></div>
+          <div><label className="text-sm font-medium block mb-1">Due Date (optional)</label><input type="date" className="input-field" value={generateDueDate} onChange={(e) => setGenerateDueDate(e.target.value)} /><p className="text-xs text-slate-400 mt-1">Enables automatic WhatsApp reminders</p></div>
           <button type="submit" disabled={generating} className="btn-primary flex items-center gap-2"><FaPlus /> {generating ? "Generating..." : "Generate Fees"}</button>
         </form>
       </div>
@@ -134,7 +149,14 @@ const FeeManagement = () => {
                   <td className="py-3 px-4">₹{f.pending}</td>
                   <td className="py-3 px-4"><span className={`badge ${f.status === "Paid" ? "bg-emerald-100 text-emerald-700" : f.status === "Partial" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>{f.status}</span></td>
                   <td className="py-3 px-4 text-right">
-                    {f.status !== "Paid" ? <button onClick={() => openPayModal(f)} className="btn-outline text-xs py-1.5 px-3">Record Payment</button> : <span className="text-slate-400 text-xs">Fully paid</span>}
+                    <div className="flex justify-end gap-2">
+                      {f.status !== "Paid" && (
+                        <button onClick={() => handleSendReminder(f._id)} disabled={remindingId === f._id} className="btn-outline text-xs py-1.5 px-3">
+                          {remindingId === f._id ? "Sending..." : "Remind"}
+                        </button>
+                      )}
+                      {f.status !== "Paid" ? <button onClick={() => openPayModal(f)} className="btn-outline text-xs py-1.5 px-3">Record Payment</button> : <span className="text-slate-400 text-xs">Fully paid</span>}
+                    </div>
                   </td>
                 </tr>
               ))

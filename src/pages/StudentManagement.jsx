@@ -11,6 +11,9 @@ const emptyForm = {
   name: "",
   parentName: "",
   phone: "",
+  parentWhatsapp: "",
+  studentWhatsapp: "",
+  preferredLanguage: "English",
   class: "",
   batch: "",
   password: "",
@@ -70,6 +73,9 @@ const StudentManagement = ({ basePath = "/teacher" }) => {
       name: student.name,
       parentName: student.parentName,
       phone: student.phone,
+      parentWhatsapp: student.parentWhatsapp || "",
+      studentWhatsapp: student.studentWhatsapp || "",
+      preferredLanguage: student.preferredLanguage || "English",
       class: student.class,
       batch: student.batch || "",
       password: "",
@@ -219,6 +225,21 @@ const StudentManagement = ({ basePath = "/teacher" }) => {
               <div className="col-span-1">
                 <label className="text-sm font-medium">Phone</label>
                 <input className="input-field mt-1" required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              </div>
+              <div className="col-span-1">
+                <label className="text-sm font-medium">Parent WhatsApp <span className="text-slate-400 font-normal">(if different)</span></label>
+                <input className="input-field mt-1" placeholder="Defaults to phone above" value={form.parentWhatsapp} onChange={(e) => setForm({ ...form, parentWhatsapp: e.target.value })} />
+              </div>
+              <div className="col-span-1">
+                <label className="text-sm font-medium">Student WhatsApp <span className="text-slate-400 font-normal">(optional)</span></label>
+                <input className="input-field mt-1" value={form.studentWhatsapp} onChange={(e) => setForm({ ...form, studentWhatsapp: e.target.value })} />
+              </div>
+              <div className="col-span-1">
+                <label className="text-sm font-medium">Preferred Language</label>
+                <select className="input-field mt-1" value={form.preferredLanguage} onChange={(e) => setForm({ ...form, preferredLanguage: e.target.value })}>
+                  <option>English</option>
+                  <option>Telugu</option>
+                </select>
               </div>
               <div className="col-span-1">
                 <label className="text-sm font-medium">Batch</label>
