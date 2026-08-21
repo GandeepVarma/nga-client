@@ -5,6 +5,15 @@ import { Toaster } from "react-hot-toast";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 
+// Public site (no auth)
+import Home from "./pages/public/Home";
+import Pricing from "./pages/public/Pricing";
+import RegisterAcademy from "./pages/public/RegisterAcademy";
+import AcademyLogin from "./pages/public/AcademyLogin";
+import SuperAdminLogin from "./pages/public/SuperAdminLogin";
+import About from "./pages/public/About";
+import Contact from "./pages/public/Contact";
+
 // Admin-only pages
 import AdminDashboard from "./pages/AdminDashboard";
 import TeacherManagement from "./pages/TeacherManagement";
@@ -25,6 +34,10 @@ import OnlineTestSubmissions from "./pages/OnlineTestSubmissions";
 import WhatsAppSettings from "./pages/WhatsAppSettings";
 import WhatsAppLogs from "./pages/WhatsAppLogs";
 import BroadcastMessage from "./pages/BroadcastMessage";
+import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import AcademyManagement from "./pages/AcademyManagement";
+import AcademyCreate from "./pages/AcademyCreate";
+import AcademyDetails from "./pages/AcademyDetails";
 
 // Teacher-only
 import TeacherDashboard from "./pages/TeacherDashboard";
@@ -43,7 +56,22 @@ function App() {
     <>
       <Toaster position="top-right" toastOptions={{ duration: 3500 }} />
       <Routes>
+        {/* ---------------- PUBLIC SOFTWARE WEBSITE ---------------- */}
+        <Route path="/" element={<Home />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/register-academy" element={<RegisterAcademy />} />
+        <Route path="/academy-login" element={<AcademyLogin />} />
+        <Route path="/super-admin/login" element={<SuperAdminLogin />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+        {/* Legacy single-tab login page — kept working for existing bookmarks/links */}
         <Route path="/login" element={<Login />} />
+
+        {/* ---------------- SUPER ADMIN ---------------- */}
+        <Route path="/super-admin/dashboard" element={<ProtectedRoute allowedRoles={["super_admin"]}><SuperAdminDashboard /></ProtectedRoute>} />
+        <Route path="/super-admin/academies" element={<ProtectedRoute allowedRoles={["super_admin"]}><AcademyManagement /></ProtectedRoute>} />
+        <Route path="/super-admin/academies/create" element={<ProtectedRoute allowedRoles={["super_admin"]}><AcademyCreate /></ProtectedRoute>} />
+        <Route path="/super-admin/academies/:id" element={<ProtectedRoute allowedRoles={["super_admin"]}><AcademyDetails /></ProtectedRoute>} />
 
         {/* ---------------- ADMIN ---------------- */}
         <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />
@@ -90,8 +118,7 @@ function App() {
         <Route path="/student/online-tests/:id/exam" element={<ProtectedRoute allowedRoles={["student"]}><StudentTestExam /></ProtectedRoute>} />
         <Route path="/student/online-tests/:id/result" element={<ProtectedRoute allowedRoles={["student"]}><StudentTestResult /></ProtectedRoute>} />
 
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   );

@@ -1,0 +1,161 @@
+import React, { useEffect, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
+import { FaPlus, FaSearch, FaEye, FaEdit } from "react-icons/fa";
+import DashboardLayout from "../components/DashboardLayout";
+import api from "../api/axios";
+
+const statusStyle = {
+  ACTIVE: "bg-emerald-100 text-emerald-700",
+  PENDING: "bg-amber-100 text-amber-700",
+  APPROVED: "bg-blue-100 text-blue-700",
+  REJECTED: "bg-red-100 text-red-700",
+  SUSPENDED: "bg-slate-200 text-slate-600",
+};
+
+// Which action buttons make sense from each current status
+const actionsFor = (status) => {
+  if (status === "PENDING") return [{ to: "APPROVED", label: "Approve" }, { to: "REJECTED", label: "Reject" }];
+  if (status === "APPROVED") return [{ to: "ACTIVE", label: "Activate" }, { to: "REJECTED", label: "Reject" }];
+  if (status === "ACTIVE") return [{ to: "SUSPENDED", label: "Suspend" }];
+  if (status === "SUSPENDED") return [{ to: "ACTIVE", label: "Reactivate" }];
+  if (status === "REJECTED") return [{ to: "PENDING", label: "Reconsider" }];
+  return [];
+};
+
+const AcademyManagement = () => {
+  const [academies, setAcademies] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [sort, setSort] = useState("-createdAt");
+  const [loading, setLoading] = useState(true);
+  const [workingId, setWorkingId] = useState(null);
+  const limit = 15;
+
+  const fetchAcademies = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get("/super-admin/academies", {
+        params: { search: search || undefined, status: statusFilter || undefined, sort, page, limit },
+      });
+      setAcademies(res.data.data);
+      setTotal(res.data.total);
+    } catch {
+      toast.error("Could not load academies");
+    } finally {
+      setLoading(false);
+    }
+  }, [search, statusFilter, sort, page]);
+
+  useEffect(() => {
+    const debounce = setTimeout(fetchAcademies, 300);
+    return () => clearTimeout(debounce);
+  }, [fetchAcademies]);
+
+  const changeStatus = async (academy, newStatus, label) => {
+    if (!confirm(`${label} "${academy.academyName}"?`)) return;
+    setWorkingId(academy._id);
+    try {
+      await api.put(`/super-admin/academies/${academy._id}/status`, { status: newStatus });
+      toast.success(`Academy ${label.toLowerCase()}d`);
+      fetchAcademies();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Action failed");
+    } finally {
+      setWorkingId(null);
+    }
+  };
+
+  const totalPages = Math.max(Math.ceil(total / limit), 1);
+
+  return (
+    <DashboardLayout title="Academies">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+        <div className="flex flex-wrap gap-3 flex-1">
+          <div className="relative max-w-sm flex-1 min-w-[200px]">
+            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
+            <input className="input-field pl-9" placeholder="Search name, owner, email, ID..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
+          </div>
+          <select className="input-field max-w-[180px]" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}>
+            <option value="">All statuses</option>
+            <option value="PENDING">Pending</option>
+            <option value="APPROVED">Approved</option>
+            <option value="ACTIVE">Active</option>
+            <option value="SUSPENDED">Suspended</option>
+            <option value="REJECTED">Rejected</option>
+          </select>
+          <select className="input-field max-w-[180px]" value={sort} onChange={(e) => setSort(e.target.value)}>
+            <option value="-createdAt">Newest first</option>
+            <option value="createdAt">Oldest first</option>
+            <option value="academyName">Name (A-Z)</option>
+          </select>
+        </div>
+        <Link to="/super-admin/academies/create" className="btn-primary flex items-center gap-2 shrink-0">
+          <FaPlus /> Create Academy
+        </Link>
+      </div>
+
+      <div className="card p-0 overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-navy-lighter">
+              <th className="py-3 px-4">Academy Name</th>
+              <th className="py-3 px-4">Owner</th>
+              <th className="py-3 px-4">Plan</th>
+              <th className="py-3 px-4">Status</th>
+              <th className="py-3 px-4">Created</th>
+              <th className="py-3 px-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan={6} className="text-center py-10 text-slate-400">Loading...</td></tr>
+            ) : academies.length === 0 ? (
+              <tr><td colSpan={6} className="text-center py-10 text-slate-400">No academies found.</td></tr>
+            ) : (
+              academies.map((a) => (
+                <tr key={a._id} className="border-b border-slate-50 dark:border-navy-lighter/50">
+                  <td className="py-3 px-4 font-medium text-navy dark:text-white">{a.academyName} <span className="text-slate-400 font-normal text-xs">({a.academyId})</span></td>
+                  <td className="py-3 px-4">{a.ownerName}<br /><span className="text-xs text-slate-400">{a.ownerEmail}</span></td>
+                  <td className="py-3 px-4">{a.plan?.name || "—"}</td>
+                  <td className="py-3 px-4"><span className={`badge ${statusStyle[a.status]}`}>{a.status}</span></td>
+                  <td className="py-3 px-4">{new Date(a.createdAt).toLocaleDateString()}</td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center justify-end gap-2 flex-wrap">
+                      <Link to={`/super-admin/academies/${a._id}`} title="View" className="text-slate-500"><FaEye className="hover:text-blue-500" /></Link>
+                      <Link to={`/super-admin/academies/${a._id}?edit=1`} title="Edit" className="text-slate-500"><FaEdit className="hover:text-gold" /></Link>
+                      {actionsFor(a.status).map((action) => (
+                        <button
+                          key={action.to}
+                          onClick={() => changeStatus(a, action.to, action.label)}
+                          disabled={workingId === a._id}
+                          className="text-xs px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-navy-lighter text-navy dark:text-white hover:bg-slate-200 dark:hover:bg-navy"
+                        >
+                          {action.label}
+                        </button>
+                      ))}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-2 mt-6">
+          {Array.from({ length: totalPages }).map((_, i) => (
+            <button key={i} onClick={() => setPage(i + 1)} className={`w-8 h-8 rounded-lg text-sm ${page === i + 1 ? "bg-gold text-navy font-semibold" : "bg-white dark:bg-navy-light text-slate-500"}`}>
+              {i + 1}
+            </button>
+          ))}
+        </div>
+      )}
+    </DashboardLayout>
+  );
+};
+
+export default AcademyManagement;

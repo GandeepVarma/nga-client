@@ -19,7 +19,11 @@ const Login = () => {
     try {
       if (mode === "staff") {
         const data = await loginStaff(email, password);
-        navigate(data.role === "admin" ? "/admin/dashboard" : "/teacher/dashboard");
+        const dest =
+          data.role === "super_admin" ? "/super-admin/dashboard" :
+          data.role === "admin" ? "/admin/dashboard" :
+          "/teacher/dashboard";
+        navigate(dest);
       } else {
         await loginStudent(studentId, password);
         navigate("/student/dashboard");

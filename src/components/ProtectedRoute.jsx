@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const homeFor = (role) => {
+  if (role === "super_admin") return "/super-admin/dashboard";
   if (role === "admin") return "/admin/dashboard";
   if (role === "teacher") return "/teacher/dashboard";
   return "/student/dashboard";

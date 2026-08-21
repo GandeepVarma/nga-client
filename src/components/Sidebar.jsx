@@ -15,6 +15,8 @@ import {
   FaWhatsapp,
   FaHistory,
   FaCog,
+  FaBuilding,
+  FaPlusCircle,
 } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 
@@ -55,9 +57,20 @@ const studentLinks = [
   { to: "/student/fees", label: "Fee Status", icon: FaMoneyBillWave },
 ];
 
+// Super Admin: platform-level, sits above every academy.
+const superAdminLinks = [
+  { to: "/super-admin/dashboard", label: "Dashboard", icon: FaThLarge },
+  { to: "/super-admin/academies", label: "Academies", icon: FaBuilding },
+  { to: "/super-admin/academies/create", label: "Create Academy", icon: FaPlusCircle },
+];
+
 const Sidebar = ({ open, onClose }) => {
   const { role } = useAuth();
-  const links = role === "admin" ? adminLinks : role === "teacher" ? teacherLinks : studentLinks;
+  const links =
+    role === "super_admin" ? superAdminLinks :
+    role === "admin" ? adminLinks :
+    role === "teacher" ? teacherLinks :
+    studentLinks;
 
   return (
     <>
