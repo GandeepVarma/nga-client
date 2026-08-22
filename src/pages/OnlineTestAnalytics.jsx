@@ -6,6 +6,7 @@ import { Bar } from "react-chartjs-2";
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend } from "chart.js";
 import DashboardLayout from "../components/DashboardLayout";
 import StatCard from "../components/StatCard";
+import MathText from "../components/MathText";
 import api from "../api/axios";
 import { FaUsers, FaCheckCircle, FaTimesCircle, FaTrophy } from "react-icons/fa";
 
@@ -74,7 +75,7 @@ const OnlineTestAnalytics = ({ basePath = "/teacher" }) => {
           {data.questionAccuracy.map((q, i) => (
             <div key={q.questionId}>
               <div className="flex justify-between text-sm mb-1">
-                <span className="text-slate-600 dark:text-slate-300 truncate max-w-[70%]">Q{i + 1}. {q.questionText}</span>
+                <span className="text-slate-600 dark:text-slate-300 truncate max-w-[70%]">Q{i + 1}. <MathText text={q.questionText} /></span>
                 <span className="text-slate-400">{q.accuracyPercent}%</span>
               </div>
               <div className="h-2 bg-slate-100 dark:bg-navy-lighter rounded-full overflow-hidden">

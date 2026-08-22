@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../api/axios";
+import MathText from "../components/MathText";
 
 const TAB_SWITCH_AUTO_SUBMIT_THRESHOLD = 5;
 
@@ -153,7 +154,7 @@ const StudentTestExam = () => {
       <div className="flex-1 flex flex-col lg:flex-row gap-5 p-4 lg:p-8">
         <div className="flex-1 card">
           <p className="text-xs text-slate-400 mb-2">Question {current + 1} of {test.questions.length} &middot; {q.marks} mark(s)</p>
-          <p className="text-navy dark:text-white font-medium mb-5">{q.questionText}</p>
+          <p className="text-navy dark:text-white font-medium mb-5"><MathText text={q.questionText} /></p>
 
           <div className="space-y-3 mb-6">
             {q.options.map((opt, i) => (
@@ -166,7 +167,7 @@ const StudentTestExam = () => {
                 }`}
               >
                 <input type="radio" name={`q-${q._id}`} checked={qAnswer.selectedOption === i} onChange={() => setAnswer(i)} />
-                <span className="text-sm text-navy dark:text-white">{String.fromCharCode(65 + i)}. {opt}</span>
+                <span className="text-sm text-navy dark:text-white">{String.fromCharCode(65 + i)}. <MathText text={opt} /></span>
               </label>
             ))}
           </div>

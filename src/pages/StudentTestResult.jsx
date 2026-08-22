@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { FaArrowLeft, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import DashboardLayout from "../components/DashboardLayout";
+import MathText from "../components/MathText";
 import api from "../api/axios";
 
 const StudentTestResult = () => {
@@ -56,7 +57,7 @@ const StudentTestResult = () => {
           <div className="space-y-5">
             {result.review.map((q, i) => (
               <div key={i} className="border-b border-slate-50 dark:border-navy-lighter/50 pb-4 last:border-0">
-                <p className="text-sm font-medium text-navy dark:text-white mb-2">Q{i + 1}. {q.questionText}</p>
+                <p className="text-sm font-medium text-navy dark:text-white mb-2">Q{i + 1}. <MathText text={q.questionText} /></p>
                 <div className="space-y-1.5">
                   {q.options.map((opt, oi) => (
                     <div
@@ -68,7 +69,7 @@ const StudentTestResult = () => {
                       }`}
                     >
                       {oi === q.correctOption ? <FaCheckCircle /> : oi === q.selectedOption ? <FaTimesCircle /> : <span className="w-4" />}
-                      {String.fromCharCode(65 + oi)}. {opt}
+                      {String.fromCharCode(65 + oi)}. <MathText text={opt} />
                     </div>
                   ))}
                 </div>

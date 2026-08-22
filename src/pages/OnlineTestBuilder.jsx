@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { FaPlus, FaTrash, FaCopy, FaArrowUp, FaArrowDown, FaSave } from "react-icons/fa";
 import DashboardLayout from "../components/DashboardLayout";
+import MathText from "../components/MathText";
 import api from "../api/axios";
 
 const emptyQuestion = () => ({
@@ -195,17 +196,28 @@ const OnlineTestBuilder = ({ basePath = "/teacher" }) => {
               </div>
             </div>
 
-            <textarea className="input-field" rows={2} placeholder="Question text" required value={q.questionText} onChange={(e) => updateQuestion(i, "questionText", e.target.value)} />
+            <textarea className="input-field" rows={2} placeholder="Question text — wrap math in $...$, e.g. Solve $x^2+5x+6=0$" required value={q.questionText} onChange={(e) => updateQuestion(i, "questionText", e.target.value)} />
+            {q.questionText.includes("$") && (
+              <div className="bg-slate-50 dark:bg-navy-lighter rounded-lg px-3 py-2 text-sm text-navy dark:text-white">
+                <span className="text-xs text-slate-400 mr-2">Preview:</span>
+                <MathText text={q.questionText} />
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {q.options.map((opt, oi) => (
-                <div key={oi} className="flex items-center gap-2">
-                  <input type="radio" name={`correct-${i}`} checked={q.correctOption === oi} onChange={() => updateQuestion(i, "correctOption", oi)} title="Mark as correct answer" />
-                  <input className="input-field" required placeholder={`Option ${String.fromCharCode(65 + oi)}`} value={opt} onChange={(e) => updateOption(i, oi, e.target.value)} />
+                <div key={oi} className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <input type="radio" name={`correct-${i}`} checked={q.correctOption === oi} onChange={() => updateQuestion(i, "correctOption", oi)} title="Mark as correct answer" />
+                    <input className="input-field" required placeholder={`Option ${String.fromCharCode(65 + oi)} — e.g. $\\frac{1}{2}$`} value={opt} onChange={(e) => updateOption(i, oi, e.target.value)} />
+                  </div>
+                  {opt.includes("$") && (
+                    <p className="text-xs text-navy dark:text-white pl-6"><MathText text={opt} /></p>
+                  )}
                 </div>
               ))}
             </div>
-            <p className="text-xs text-slate-400">Select the radio button next to the correct option.</p>
+            <p className="text-xs text-slate-400">Select the radio button next to the correct option. Wrap any math in single $ signs for inline formulas (powers, fractions, roots, etc.) — a live preview appears once you type a $.</p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><label className="text-sm font-medium block mb-1">Marks</label><input type="number" min="0.5" step="0.5" className="input-field" value={q.marks} onChange={(e) => updateQuestion(i, "marks", e.target.value)} /></div>
