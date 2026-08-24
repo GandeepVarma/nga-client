@@ -17,6 +17,7 @@ import {
   FaCog,
   FaBuilding,
   FaPlusCircle,
+  FaQuestionCircle,
 } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 
@@ -28,6 +29,7 @@ const adminLinks = [
   { to: "/admin/students", label: "All Students", icon: FaUsers },
   { to: "/admin/tests", label: "Tests", icon: FaClipboardList },
   { to: "/admin/online-tests", label: "Online MCQ Tests", icon: FaLaptopCode },
+  { to: "/admin/question-bank", label: "Question Bank", icon: FaQuestionCircle },
   { to: "/admin/assignments", label: "Assignments", icon: FaBookOpen },
   { to: "/admin/fees", label: "Fees", icon: FaMoneyBillWave },
   { to: "/admin/attendance", label: "Attendance", icon: FaCalendarCheck },
@@ -43,6 +45,7 @@ const teacherLinks = [
   { to: "/teacher/students", label: "My Students", icon: FaUsers },
   { to: "/teacher/tests", label: "Tests", icon: FaClipboardList },
   { to: "/teacher/online-tests", label: "Online MCQ Tests", icon: FaLaptopCode },
+  { to: "/teacher/question-bank", label: "Question Bank", icon: FaQuestionCircle },
   { to: "/teacher/assignments", label: "Assignments", icon: FaBookOpen },
   { to: "/teacher/attendance", label: "Attendance", icon: FaCalendarCheck },
   { to: "/teacher/whatsapp/broadcast", label: "Broadcast", icon: FaWhatsapp },
