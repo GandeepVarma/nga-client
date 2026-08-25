@@ -18,6 +18,7 @@ import {
   FaBuilding,
   FaPlusCircle,
   FaQuestionCircle,
+  FaKey,
 } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 import { PLATFORM_NAME, PLATFORM_TAGLINE } from "../config/branding";
@@ -38,6 +39,7 @@ const adminLinks = [
   { to: "/admin/whatsapp/broadcast", label: "Broadcast", icon: FaWhatsapp },
   { to: "/admin/whatsapp/logs", label: "WhatsApp Logs", icon: FaHistory },
   { to: "/admin/whatsapp/settings", label: "WhatsApp Settings", icon: FaCog },
+  { to: "/account/password", label: "Change Password", icon: FaKey },
 ];
 
 // Teacher: scoped strictly to their own assigned students. No fees, ever.
@@ -51,6 +53,7 @@ const teacherLinks = [
   { to: "/teacher/attendance", label: "Attendance", icon: FaCalendarCheck },
   { to: "/teacher/whatsapp/broadcast", label: "Broadcast", icon: FaWhatsapp },
   { to: "/teacher/whatsapp/logs", label: "WhatsApp Logs", icon: FaHistory },
+  { to: "/account/password", label: "Change Password", icon: FaKey },
 ];
 
 const studentLinks = [
@@ -59,6 +62,7 @@ const studentLinks = [
   { to: "/student/online-tests", label: "Online Tests", icon: FaLaptopCode },
   { to: "/student/assignments", label: "Assignments", icon: FaBookOpen },
   { to: "/student/fees", label: "Fee Status", icon: FaMoneyBillWave },
+  { to: "/account/password", label: "Change Password", icon: FaKey },
 ];
 
 // Super Admin: platform-level, sits above every academy.
@@ -66,6 +70,7 @@ const superAdminLinks = [
   { to: "/super-admin/dashboard", label: "Dashboard", icon: FaThLarge },
   { to: "/super-admin/academies", label: "Academies", icon: FaBuilding },
   { to: "/super-admin/academies/create", label: "Create Academy", icon: FaPlusCircle },
+  { to: "/account/password", label: "Change Password", icon: FaKey },
 ];
 
 const Sidebar = ({ open, onClose }) => {

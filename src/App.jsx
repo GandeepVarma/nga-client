@@ -13,6 +13,7 @@ import AcademyLogin from "./pages/public/AcademyLogin";
 import SuperAdminLogin from "./pages/public/SuperAdminLogin";
 import About from "./pages/public/About";
 import Contact from "./pages/public/Contact";
+import ChangePassword from "./pages/ChangePassword";
 
 // Admin-only pages
 import AdminDashboard from "./pages/AdminDashboard";
@@ -65,6 +66,7 @@ function App() {
         <Route path="/super-admin/login" element={<SuperAdminLogin />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/account/password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
         {/* Legacy single-tab login page — kept working for existing bookmarks/links */}
         <Route path="/login" element={<Login />} />
 
