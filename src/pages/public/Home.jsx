@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { FaUsers, FaCalendarCheck, FaMoneyBillWave, FaClipboardList, FaWhatsapp, FaChartLine } from "react-icons/fa";
 import PublicLayout from "../../components/PublicLayout";
+import { PLATFORM_NAME, PLATFORM_TAGLINE } from "../../config/branding";
 
 const features = [
   { icon: FaUsers, title: "Student & Teacher Management", desc: "Keep every profile, class, and assignment organized in one place." },
@@ -17,16 +18,16 @@ const Home = () => {
     <PublicLayout>
       <section className="bg-navy text-white">
         <div className="max-w-6xl mx-auto px-4 lg:px-8 py-20 lg:py-28 text-center">
-          <p className="text-gold font-semibold tracking-wide text-sm mb-4">SAAS MANAGEMENT PLATFORM</p>
+          <p className="text-gold font-semibold tracking-wide text-sm mb-4">{PLATFORM_NAME}</p>
           <h1 className="font-display text-4xl lg:text-6xl font-bold leading-tight mb-6">
-            Manage Your Academy <span className="text-gold">Smarter</span>
+            {PLATFORM_TAGLINE.split(".")[0]}. <span className="text-gold">{PLATFORM_TAGLINE.split(".")[1].trim()}.</span>
           </h1>
           <p className="text-slate-300 text-lg max-w-2xl mx-auto mb-10">
             One platform for students, teachers, attendance, fees, tests, assignments, and communication —
-            built for tuition centers and coaching academies of any size.
+            built for schools, tuition academies, coaching institutes, and training centers of any size.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link to="/register-academy" className="btn-primary text-base py-3 px-8">Get Started</Link>
+            <Link to="/register-academy" className="btn-primary text-base py-3 px-8">Start Free Trial</Link>
             <Link to="/academy-login" className="btn-outline !border-slate-400 !text-white hover:!bg-navy-lighter text-base py-3 px-8">Academy Login</Link>
           </div>
         </div>
@@ -52,7 +53,7 @@ const Home = () => {
       <section className="bg-navy-light">
         <div className="max-w-4xl mx-auto px-4 lg:px-8 py-16 text-center">
           <h2 className="font-display text-2xl lg:text-3xl font-bold text-white mb-4">Ready to get started?</h2>
-          <p className="text-slate-300 mb-8">See our plans, or register your academy in a few minutes.</p>
+          <p className="text-slate-300 mb-8">Start managing your academy with DHARA in a few minutes.</p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link to="/pricing" className="btn-primary text-base py-3 px-8">View Pricing</Link>
             <Link to="/register-academy" className="btn-outline !border-slate-400 !text-white hover:!bg-navy text-base py-3 px-8">Register Your Academy</Link>

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { FaGraduationCap, FaUserTie, FaUserGraduate } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
+import { PLATFORM_NAME } from "../config/branding";
 
 const Login = () => {
   const [mode, setMode] = useState("staff"); // "staff" (admin or teacher) | "student"
@@ -51,7 +52,7 @@ const Login = () => {
             <FaGraduationCap className="text-navy text-xl" />
           </div>
           <span className="font-display font-bold text-white text-lg tracking-tight">
-            NextGen Learning Academy
+            {PLATFORM_NAME}
           </span>
         </div>
 
@@ -78,7 +79,7 @@ const Login = () => {
               <FaGraduationCap className="text-navy text-lg" />
             </div>
             <span className="font-display font-bold text-navy dark:text-white text-lg">
-              NextGen Learning Academy
+              {PLATFORM_NAME}
             </span>
           </div>
 
@@ -121,7 +122,7 @@ const Login = () => {
                     type="email"
                     required
                     className="input-field"
-                    placeholder="you@nextgenacademy.com"
+                    placeholder="you@youracademy.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
@@ -163,7 +164,7 @@ const Login = () => {
           </div>
 
           <p className="text-center text-slate-400 text-xs mt-6">
-            NextGen Learning Academy &copy; {new Date().getFullYear()}
+            {PLATFORM_NAME} &copy; {new Date().getFullYear()}
           </p>
         </div>
       </div>

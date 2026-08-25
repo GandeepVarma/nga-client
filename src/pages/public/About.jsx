@@ -1,13 +1,14 @@
 import React from "react";
 import PublicLayout from "../../components/PublicLayout";
+import { PLATFORM_NAME } from "../../config/branding";
 
 const About = () => (
   <PublicLayout>
     <div className="max-w-2xl mx-auto px-4 py-16">
-      <h1 className="font-display text-3xl font-bold text-navy dark:text-white mb-4">About NextGen Learning Academy</h1>
+      <h1 className="font-display text-3xl font-bold text-navy dark:text-white mb-4">About {PLATFORM_NAME}</h1>
       <p className="text-slate-600 dark:text-slate-300 leading-relaxed mb-4">
-        NextGen Learning Academy started as a single Mathematics coaching center's management
-        platform and has grown into a SaaS product for tuition centers and coaching academies —
+        {PLATFORM_NAME} is an education management SaaS platform for schools, tuition centers,
+        coaching institutes, and training academies —
         handling students, teachers, attendance, fees, tests, assignments, and parent
         communication in one place.
       </p>

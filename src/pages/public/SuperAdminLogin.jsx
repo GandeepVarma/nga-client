@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { FaLock } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
+import { PLATFORM_NAME } from "../../config/branding";
 
 const SuperAdminLogin = () => {
   const [email, setEmail] = useState("");
@@ -32,6 +33,7 @@ const SuperAdminLogin = () => {
           <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mx-auto mb-4">
             <FaLock className="text-slate-400 text-xl" />
           </div>
+          <p className="text-slate-400 font-display font-bold tracking-wide mb-2">{PLATFORM_NAME}</p>
           <h1 className="font-display text-xl font-bold text-white">Super Admin</h1>
           <p className="text-slate-500 text-sm mt-1">Platform owner access only</p>
         </div>

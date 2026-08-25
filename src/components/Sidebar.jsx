@@ -20,6 +20,7 @@ import {
   FaQuestionCircle,
 } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
+import { PLATFORM_NAME, PLATFORM_TAGLINE } from "../config/branding";
 
 // Admin: full academy control, including teacher management and finances.
 const adminLinks = [
@@ -68,7 +69,7 @@ const superAdminLinks = [
 ];
 
 const Sidebar = ({ open, onClose }) => {
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const links =
     role === "super_admin" ? superAdminLinks :
     role === "admin" ? adminLinks :
@@ -89,8 +90,8 @@ const Sidebar = ({ open, onClose }) => {
             <FaGraduationCap className="text-navy text-lg" />
           </div>
           <div className="leading-tight">
-            <p className="font-display font-bold text-white text-sm">NextGen</p>
-            <p className="text-slate-400 text-xs">Learning Academy</p>
+            <p className="font-display font-bold text-white text-sm">{PLATFORM_NAME}</p>
+            {user?.academyName && <p className="text-slate-400 text-xs truncate" title={user.academyName}>{user.academyName}</p>}
           </div>
         </div>
 
@@ -107,7 +108,7 @@ const Sidebar = ({ open, onClose }) => {
           ))}
         </nav>
 
-        <div className="text-slate-500 text-xs px-2">Learn Today. Lead Tomorrow.</div>
+        <div className="text-slate-500 text-xs px-2">{PLATFORM_TAGLINE}</div>
       </aside>
     </>
   );

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { FaGraduationCap, FaBars, FaTimes } from "react-icons/fa";
+import { PLATFORM_NAME, PLATFORM_TAGLINE } from "../config/branding";
 
 const PublicLayout = ({ children }) => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -20,7 +21,7 @@ const PublicLayout = ({ children }) => {
             <div className="w-9 h-9 rounded-xl bg-gold flex items-center justify-center">
               <FaGraduationCap className="text-navy text-lg" />
             </div>
-            <span className="font-display font-bold tracking-tight">NextGen Learning Academy</span>
+            <span className="font-display font-bold tracking-tight">{PLATFORM_NAME}</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
@@ -66,7 +67,7 @@ const PublicLayout = ({ children }) => {
 
       <footer className="bg-navy text-slate-400 text-sm">
         <div className="max-w-6xl mx-auto px-4 lg:px-8 py-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p>&copy; {new Date().getFullYear()} NextGen Learning Academy. Learn Today. Lead Tomorrow.</p>
+          <p>&copy; {new Date().getFullYear()} {PLATFORM_NAME}. {PLATFORM_TAGLINE}</p>
           <div className="flex gap-5">
             <Link to="/pricing" className="hover:text-white">Pricing</Link>
             <Link to="/about" className="hover:text-white">About</Link>

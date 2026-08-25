@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import PublicLayout from "../../components/PublicLayout";
 import api from "../../api/axios";
+import { PLATFORM_NAME } from "../../config/branding";
 
 const RegisterAcademy = () => {
   const [searchParams] = useSearchParams();
@@ -61,7 +62,7 @@ const RegisterAcademy = () => {
     <PublicLayout>
       <div className="max-w-2xl mx-auto px-4 py-12">
         <h1 className="font-display text-2xl lg:text-3xl font-bold text-navy dark:text-white mb-1">Register Your Academy</h1>
-        <p className="text-slate-500 dark:text-slate-400 mb-8">Takes about 5 minutes. Your academy goes live once we review and approve it.</p>
+        <p className="text-slate-500 dark:text-slate-400 mb-8">Create your academy on {PLATFORM_NAME}. It goes live once we review and approve it.</p>
 
         <form onSubmit={handleSubmit} className="card space-y-5">
           <div>

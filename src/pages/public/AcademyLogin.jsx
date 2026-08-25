@@ -5,6 +5,7 @@ import { FaUserTie, FaUserGraduate } from "react-icons/fa";
 import PublicLayout from "../../components/PublicLayout";
 import api from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
+import { PLATFORM_NAME } from "../../config/branding";
 
 const AcademyLogin = () => {
   const [academies, setAcademies] = useState([]);
@@ -47,6 +48,7 @@ const AcademyLogin = () => {
   return (
     <PublicLayout>
       <div className="max-w-md mx-auto px-4 py-16">
+        <p className="text-gold font-display font-bold tracking-wide text-center mb-2">{PLATFORM_NAME}</p>
         <h1 className="font-display text-2xl font-bold text-navy dark:text-white mb-1 text-center">Academy Login</h1>
         <p className="text-slate-500 dark:text-slate-400 text-center mb-8">Select your academy to continue</p>
 
