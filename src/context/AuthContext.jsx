@@ -28,6 +28,9 @@ export const AuthProvider = ({ children }) => {
         setRole(res.data.role);
       })
       .catch(() => {
+        localStorage.removeItem("nga_token");
+        localStorage.removeItem("nga_user");
+        localStorage.removeItem("nga_role");
         setUser(null);
         setRole(null);
       })

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { FaPlus, FaSearch, FaEye, FaEdit } from "react-icons/fa";
+import { FaPlus, FaSearch, FaEye, FaEdit, FaTrash } from "react-icons/fa";
 import DashboardLayout from "../components/DashboardLayout";
 import api from "../api/axios";
 
@@ -68,6 +68,22 @@ const AcademyManagement = () => {
     }
   };
 
+  const deleteAcademy = async (academy) => {
+    const confirmed = confirm(`Permanently delete ${academy.academyName}? This deletes the academy and all of its students, staff, attendance, fees, tests, submissions, questions, assignments, notifications, and settings. This cannot be undone.`);
+    if (!confirmed) return;
+    if (prompt(`Type DELETE to permanently delete ${academy.academyName}.`) !== "DELETE") return;
+    setWorkingId(academy._id);
+    try {
+      await api.delete(`/super-admin/academies/${academy._id}`);
+      toast.success("Academy and tenant data deleted");
+      fetchAcademies();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Deletion failed");
+    } finally {
+      setWorkingId(null);
+    }
+  };
+
   const totalPages = Math.max(Math.ceil(total / limit), 1);
 
   return (
@@ -126,6 +142,7 @@ const AcademyManagement = () => {
                     <div className="flex items-center justify-end gap-2 flex-wrap">
                       <Link to={`/super-admin/academies/${a._id}`} title="View" className="text-slate-500"><FaEye className="hover:text-blue-500" /></Link>
                       <Link to={`/super-admin/academies/${a._id}?edit=1`} title="Edit" className="text-slate-500"><FaEdit className="hover:text-gold" /></Link>
+                      <button onClick={() => deleteAcademy(a)} disabled={workingId === a._id} title="Permanently delete academy" className="text-red-500 hover:text-red-700"><FaTrash /></button>
                       {actionsFor(a.status).map((action) => (
                         <button
                           key={action.to}
