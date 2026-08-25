@@ -1,15 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { FaBars, FaMoon, FaSun, FaSignOutAlt } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const Topbar = ({ onMenuClick, title }) => {
   const { user, role, logout } = useAuth();
+  const navigate = useNavigate();
   const [dark, setDark] = useState(() => localStorage.getItem("nga_theme") === "dark");
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
     localStorage.setItem("nga_theme", dark ? "dark" : "light");
   }, [dark]);
+
+  const handleLogout = () => {
+    logout();
+    ["nga_academyId", "nga_tenantId"].forEach((key) => localStorage.removeItem(key));
+    navigate("/", { replace: true });
+  };
 
   return (
     <header className="h-16 flex items-center justify-between px-4 lg:px-8 bg-white dark:bg-navy-light border-b border-slate-100 dark:border-navy-lighter sticky top-0 z-20">
@@ -45,7 +53,7 @@ const Topbar = ({ onMenuClick, title }) => {
         </div>
 
         <button
-          onClick={logout}
+          onClick={handleLogout}
           className="text-slate-500 hover:text-red-500 transition-colors"
           aria-label="Log out"
           title="Log out"
