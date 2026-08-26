@@ -11,6 +11,9 @@ const OnlineTestManagement = ({ basePath = "/teacher" }) => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [duplicateTarget, setDuplicateTarget] = useState(null);
+  const [duplicateForm, setDuplicateForm] = useState({ class: "", batch: "" });
+  const [assignmentOptions, setAssignmentOptions] = useState({ classes: [], batches: [] });
   const limit = 10;
 
   const fetchTests = useCallback(async () => {
@@ -41,13 +44,44 @@ const OnlineTestManagement = ({ basePath = "/teacher" }) => {
     }
   };
 
-  const handleDuplicate = async (id) => {
+  const handleDuplicate = async (test) => {
     try {
-      await api.post(`/online-tests/${id}/duplicate`);
+      const response = await api.get("/online-tests/assignment-options");
+      setAssignmentOptions((current) => ({ ...current, classes: response.data.data.classes }));
+      const batchesResponse = test.class
+        ? await api.get("/online-tests/assignment-options", { params: { class: test.class } })
+        : { data: { data: { batches: [] } } };
+      setAssignmentOptions((current) => ({ ...current, batches: batchesResponse.data.data.batches }));
+      setDuplicateTarget(test);
+      setDuplicateForm({ class: test.class || "", batch: test.batch || "" });
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Duplicate failed");
+    }
+  };
+
+  const confirmDuplicate = async () => {
+    if (!duplicateForm.class || !duplicateForm.batch) {
+      toast.error("Please select a class and batch.");
+      return;
+    }
+    try {
+      await api.post(`/online-tests/${duplicateTarget._id}/duplicate`, duplicateForm);
       toast.success("Test duplicated (as draft)");
+      setDuplicateTarget(null);
       fetchTests();
     } catch (err) {
       toast.error(err.response?.data?.message || "Duplicate failed");
+    }
+  };
+
+  const loadDuplicateBatches = async (className) => {
+    setDuplicateForm((current) => ({ ...current, class: className, batch: "" }));
+    if (!className) return setAssignmentOptions((current) => ({ ...current, batches: [] }));
+    try {
+      const response = await api.get("/online-tests/assignment-options", { params: { class: className } });
+      setAssignmentOptions((current) => ({ ...current, batches: response.data.data.batches }));
+    } catch {
+      toast.error("Could not load batches for this class");
     }
   };
 
@@ -102,7 +136,7 @@ const OnlineTestManagement = ({ basePath = "/teacher" }) => {
               <div className="flex justify-between items-start mb-2">
                 <div>
                   <h3 className="font-display font-semibold text-navy dark:text-white">{t.title}</h3>
-                  <p className="text-sm text-slate-400">{t.subject} &middot; {t.classes.join(", ")}</p>
+                  <p className="text-sm text-slate-400">{t.subject} &middot; Class {t.class || "Unassigned"} &middot; {t.batch || "Unassigned"}</p>
                 </div>
                 <span className={`badge shrink-0 ${t.published ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600"}`}>
                   {t.published ? "Published" : "Draft"}
@@ -122,7 +156,7 @@ const OnlineTestManagement = ({ basePath = "/teacher" }) => {
                 <Link to={`${basePath}/online-tests/${t._id}/submissions`} className="btn-outline text-xs py-2 flex items-center justify-center gap-1">
                   <FaListAlt /> Submissions
                 </Link>
-                <button onClick={() => handleDuplicate(t._id)} className="btn-outline text-xs py-2 flex items-center justify-center gap-1">
+                <button onClick={() => handleDuplicate(t)} className="btn-outline text-xs py-2 flex items-center justify-center gap-1">
                   <FaCopy /> Duplicate
                 </button>
                 <button onClick={() => handleExport(t)} className="btn-outline text-xs py-2 flex items-center justify-center gap-1">
@@ -148,6 +182,24 @@ const OnlineTestManagement = ({ basePath = "/teacher" }) => {
               {i + 1}
             </button>
           ))}
+        </div>
+      )}
+
+      {duplicateTarget && (
+        <div className="fixed inset-0 z-50 bg-black/50 p-4 flex items-center justify-center">
+          <div className="card w-full max-w-md space-y-4">
+            <h2 className="font-display font-semibold text-lg text-navy dark:text-white">Duplicate Test Assignment</h2>
+            <p className="text-sm text-slate-500">Choose the class and batch for the new draft.</p>
+            <select className="input-field" value={duplicateForm.class} onChange={(e) => loadDuplicateBatches(e.target.value)}>
+              <option value="">Select class</option>
+              {assignmentOptions.classes.map((className) => <option key={className} value={className}>{className}</option>)}
+            </select>
+            <select className="input-field" disabled={!duplicateForm.class} value={duplicateForm.batch} onChange={(e) => setDuplicateForm({ ...duplicateForm, batch: e.target.value })}>
+              <option value="">Select batch</option>
+              {assignmentOptions.batches.map((batch) => <option key={batch} value={batch}>{batch}</option>)}
+            </select>
+            <div className="flex justify-end gap-3"><button className="btn-outline" onClick={() => setDuplicateTarget(null)}>Cancel</button><button className="btn-primary" onClick={confirmDuplicate}>Duplicate</button></div>
+          </div>
         </div>
       )}
     </DashboardLayout>

@@ -11,7 +11,7 @@ const emptyQuestion = () => ({
   questionText: "",
   options: ["", "", "", ""],
   correctOption: 0,
-  marks: 1,
+  marks: 2,
   explanation: "",
 });
 
@@ -64,7 +64,8 @@ const OnlineTestBuilder = ({ basePath = "/teacher" }) => {
   const [form, setForm] = useState({
     title: "",
     subject: "",
-    classes: "",
+    class: "",
+    batch: "",
     duration: 30,
     instructions: "",
     startTime: "",
@@ -93,6 +94,23 @@ const OnlineTestBuilder = ({ basePath = "/teacher" }) => {
   const [aiLoading, setAiLoading] = useState(false);
   const [showRandom, setShowRandom] = useState(false);
   const [randomForm, setRandomForm] = useState({ class: "", subject: "", chapter: "", count: 10, easy: 0, medium: 0, hard: 0 });
+  const [assignmentOptions, setAssignmentOptions] = useState({ classes: [], batches: [] });
+
+  useEffect(() => {
+    api.get("/online-tests/assignment-options")
+      .then((res) => setAssignmentOptions((current) => ({ ...current, classes: res.data.data.classes })))
+      .catch(() => toast.error("Could not load academy classes"));
+  }, []);
+
+  useEffect(() => {
+    if (!form.class) {
+      setAssignmentOptions((current) => ({ ...current, batches: [] }));
+      return;
+    }
+    api.get("/online-tests/assignment-options", { params: { class: form.class } })
+      .then((res) => setAssignmentOptions((current) => ({ ...current, batches: res.data.data.batches })))
+      .catch(() => toast.error("Could not load batches for this class"));
+  }, [form.class]);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -103,7 +121,8 @@ const OnlineTestBuilder = ({ basePath = "/teacher" }) => {
         setForm({
           title: t.title,
           subject: t.subject,
-          classes: t.classes.join(", "),
+          class: t.class || "",
+          batch: t.batch || "",
           duration: t.duration,
           instructions: t.instructions,
           startTime: toLocalInput(t.startTime),
@@ -291,7 +310,6 @@ const OnlineTestBuilder = ({ basePath = "/teacher" }) => {
     try {
       const payload = {
         ...form,
-        classes: form.classes.split(",").map((c) => c.trim()).filter(Boolean),
         duration: Number(form.duration),
         negativeMarking: Number(form.negativeMarking),
         passPercentage: Number(form.passPercentage),
@@ -332,9 +350,9 @@ const OnlineTestBuilder = ({ basePath = "/teacher" }) => {
             <div><label className="text-sm font-medium block mb-1">Subject</label><input className="input-field" required value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} /></div>
           </div>
 
-          <div>
-            <label className="text-sm font-medium block mb-1">Classes / Batches (comma-separated)</label>
-            <input className="input-field" required placeholder="e.g. Class 10, Class 10 - Morning Batch" value={form.classes} onChange={(e) => setForm({ ...form, classes: e.target.value })} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div><label className="text-sm font-medium block mb-1">Class</label><select className="input-field" required value={form.class} onChange={(e) => setForm({ ...form, class: e.target.value, batch: "" })}><option value="">Select class</option>{assignmentOptions.classes.map((className) => <option key={className} value={className}>{className}</option>)}</select></div>
+            <div><label className="text-sm font-medium block mb-1">Batch</label><select className="input-field" required disabled={!form.class} value={form.batch} onChange={(e) => setForm({ ...form, batch: e.target.value })}><option value="">{form.class ? "Select batch" : "Select a class first"}</option>{assignmentOptions.batches.map((batch) => <option key={batch} value={batch}>{batch}</option>)}</select></div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
