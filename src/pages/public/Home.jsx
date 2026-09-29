@@ -1,62 +1,394 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import { FaUsers, FaCalendarCheck, FaMoneyBillWave, FaClipboardList, FaWhatsapp, FaChartLine } from "react-icons/fa";
+import React, { useEffect, useState } from "react";
 import PublicLayout from "../../components/PublicLayout";
 import { PLATFORM_NAME, PLATFORM_TAGLINE } from "../../config/branding";
+import { FaAtom, FaBookOpen, FaCalculator, FaFlask, FaLightbulb, FaPencilAlt } from "react-icons/fa";
 
-const features = [
-  { icon: FaUsers, title: "Student & Teacher Management", desc: "Keep every profile, class, and assignment organized in one place." },
-  { icon: FaCalendarCheck, title: "Attendance", desc: "Mark attendance in seconds, with automatic parent alerts." },
-  { icon: FaMoneyBillWave, title: "Fees", desc: "Track payments, carry-forward balances, and send reminders automatically." },
-  { icon: FaClipboardList, title: "Tests & MCQ Exams", desc: "Offline marks entry or fully timed online MCQ tests with instant results." },
-  { icon: FaWhatsapp, title: "WhatsApp Notifications", desc: "Fee reminders, results, and announcements delivered where parents already are." },
-  { icon: FaChartLine, title: "Dashboards for Everyone", desc: "Purpose-built views for admins, teachers, and students." },
+const trustPoints = [
+  { value: "5+ Years", label: "Experienced Tutor" },
+  { value: "1:1", label: "Individual Attention" },
+  { value: "Strong", label: "Fundamentals" },
+  { value: "Regular", label: "Guidance" },
 ];
 
+const reasons = [
+  { title: "Experienced Tutor", text: "Guidance shaped around clear teaching and steady academic support." },
+  { title: "Individual Attention", text: "Every student receives a learning pace that matches their strengths and gaps." },
+  { title: "Strong Concept Building", text: "Learning starts with understanding, not memorisation alone." },
+  { title: "Regular Guidance", text: "Frequent review and direct support help students stay on track." },
+  { title: "Smart Learning Methods", text: "Simple techniques and structured practice make skills stick." },
+  { title: "Academic Growth", text: "Progress is shaped through consistency, clarity, and confidence." },
+];
+
+const steps = [
+  { number: "01", title: "UNDERSTAND", text: "Build strong concepts from the basics." },
+  { number: "02", title: "PRACTICE", text: "Apply what you learn through regular practice." },
+  { number: "03", title: "IMPROVE", text: "Identify mistakes and work on them with guidance." },
+  { number: "04", title: "ACHIEVE", text: "Turn consistent effort into academic progress." },
+];
+
+const achievementCards = [
+  { title: "Concept clarity", text: "Students build stronger understanding before moving to tougher topics." },
+  { title: "Practice discipline", text: "Learning becomes more consistent through guided repetition and review." },
+  { title: "Confidence building", text: "Regular support helps students participate, ask questions, and improve." },
+  { title: "Progress tracking", text: "Academic growth is monitored through regular feedback and careful attention." },
+];
+
+const testimonialCards = [
+  { quote: "The learning environment is encouraging, structured, and focused on real understanding.", label: "Parent feedback" },
+  { quote: "Students get the attention they need to improve step by step without feeling rushed.", label: "Student perspective" },
+  { quote: "Clear teaching and regular support make difficult concepts feel manageable and approachable.", label: "Learning experience" },
+];
+
+const defaultForm = {
+  studentName: "",
+  parentName: "",
+  className: "",
+  school: "",
+  phone: "",
+  preferredProgram: "",
+  message: "",
+};
+
 const Home = () => {
+  const [programs, setPrograms] = useState([]);
+  const [form, setForm] = useState(defaultForm);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000/api"}/public/programs`)
+      .then((response) => response.json())
+      .then((response) => setPrograms(response.data || []))
+      .catch(() => setPrograms([]));
+  }, []);
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setForm((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    const fields = Object.entries(form).filter(([key, value]) => key !== "message");
+    const missingField = fields.find(([, value]) => !String(value).trim());
+
+    if (missingField) {
+      setError("Please complete all required fields before sending your enquiry.");
+      setSubmitted(false);
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    const whatsappMessage = [
+      "Hello NEXT GENLEARNING ACADEMY,",
+      `Student Name: ${form.studentName}`,
+      `Parent Name: ${form.parentName}`,
+      `Class: ${form.className}`,
+      `School: ${form.school}`,
+      `Phone Number: ${form.phone}`,
+      `Preferred Program: ${form.preferredProgram}`,
+      `Message: ${form.message || "No additional message"}`,
+    ].join("\n");
+
+    const whatsappUrl = `https://wa.me/919502477923?text=${encodeURIComponent(whatsappMessage)}`;
+    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+
+    setTimeout(() => {
+      setSubmitted(true);
+      setLoading(false);
+      setForm(defaultForm);
+    }, 600);
+  };
+
   return (
     <PublicLayout>
-      <section className="bg-navy text-white">
-        <div className="max-w-6xl mx-auto px-4 lg:px-8 py-20 lg:py-28 text-center">
-          <p className="text-gold font-semibold tracking-wide text-sm mb-4">{PLATFORM_NAME}</p>
-          <h1 className="font-display text-4xl lg:text-6xl font-bold leading-tight mb-6">
-            {PLATFORM_TAGLINE.split(".")[0]}. <span className="text-gold">{PLATFORM_TAGLINE.split(".")[1].trim()}.</span>
-          </h1>
-          <p className="text-slate-300 text-lg max-w-2xl mx-auto mb-10">
-            One platform for students, teachers, attendance, fees, tests, assignments, and communication —
-            built for schools, tuition academies, coaching institutes, and training centers of any size.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link to="/register-academy" className="btn-primary text-base py-3 px-8">Start Free Trial</Link>
-            <Link to="/academy-login" className="btn-outline !border-slate-400 !text-white hover:!bg-navy-lighter text-base py-3 px-8">Academy Login</Link>
+      <section id="top" className="hero-section">
+        <div className="hero-pattern" aria-hidden="true" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
+          <div className="hero-grid">
+            <div className="hero-copy">
+              <p className="hero-badge"><FaAtom /> FOUNDATION &amp; ACADEMIC SUPPORT</p>
+              <p className="eyebrow">{PLATFORM_NAME}</p>
+              <h1 className="hero-title">DON&apos;T JUST STUDY.<br /><strong>UNDERSTAND.</strong></h1>
+              <div className="headline-stack">
+                <span>{PLATFORM_TAGLINE}</span>
+              </div>
+              <p className="hero-text">Because real learning begins when concepts become clear.</p>
+              <div className="cta-row">
+                <a href="#enquire" className="primary-button">ENQUIRE NOW</a>
+                <a href="#programs" className="secondary-button">EXPLORE PROGRAMS</a>
+              </div>
+            </div>
+
+            <div className="hero-art" aria-hidden="true">
+              <div className="hero-doodle-grid">
+                <span className="hero-symbol symbol-one"><FaCalculator /></span>
+                <span className="hero-symbol symbol-two"><FaFlask /></span>
+                <span className="hero-symbol symbol-three"><FaPencilAlt /></span>
+                <span className="hero-symbol symbol-four"><FaAtom /></span>
+                <div className="hero-book-art">
+                  <FaBookOpen className="book-icon" />
+                  <FaLightbulb className="bulb-icon" />
+                  <span className="formula formula-one">x² + y²</span>
+                  <span className="formula formula-two">E = mc²</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="max-w-6xl mx-auto px-4 lg:px-8 py-16">
-        <h2 className="font-display text-2xl lg:text-3xl font-bold text-navy dark:text-white text-center mb-12">
-          Everything your academy needs, in one place
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="card">
-              <div className="w-12 h-12 rounded-xl bg-gold/15 text-gold flex items-center justify-center text-xl mb-4">
-                <Icon />
+      <section className="trust-strip">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="trust-grid">
+            {trustPoints.map((point) => (
+              <div key={point.label} className="trust-item">
+                <strong>{point.value}</strong>
+                <span>{point.label}</span>
               </div>
-              <h3 className="font-display font-semibold text-navy dark:text-white mb-2">{title}</h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400">{desc}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
-      <section className="bg-navy-light">
-        <div className="max-w-4xl mx-auto px-4 lg:px-8 py-16 text-center">
-          <h2 className="font-display text-2xl lg:text-3xl font-bold text-white mb-4">Ready to get started?</h2>
-          <p className="text-slate-300 mb-8">Start managing your academy with DHARA in a few minutes.</p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link to="/pricing" className="btn-primary text-base py-3 px-8">View Pricing</Link>
-            <Link to="/register-academy" className="btn-outline !border-slate-400 !text-white hover:!bg-navy text-base py-3 px-8">Register Your Academy</Link>
+      <section id="about" className="content-section">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="section-header center">
+            <p className="eyebrow accent">Where learning becomes understanding</p>
+            <h2>WHERE LEARNING BECOMES UNDERSTANDING</h2>
+          </div>
+
+          <div className="about-grid">
+            <div className="about-copy">
+              <p>
+                At {PLATFORM_NAME}, learning is shaped around clarity, confidence, and steady academic growth.
+                We focus on building strong fundamentals, helping students understand ideas deeply, and guiding
+                them through regular practice with personal attention.
+              </p>
+              <p>
+                From concept building to revision and confidence, each step is designed to help students grow
+                with structure, support, and consistency. The goal is not only marks — it is meaningful learning
+                that stays with them beyond the classroom.
+              </p>
+            </div>
+
+            <div className="feature-stack">
+              <div className="mini-card">
+                <strong>Concept clarity</strong>
+                <span>Clear explanations and strong fundamentals</span>
+              </div>
+              <div className="mini-card">
+                <strong>Individual attention</strong>
+                <span>Learning designed around each student&apos;s pace</span>
+              </div>
+              <div className="mini-card">
+                <strong>Regular practice</strong>
+                <span>Steady steps that build confidence and accuracy</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="programs" className="content-section muted">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="section-header center">
+            <p className="eyebrow accent">Learning pathways</p>
+            <h2>OUR PROGRAMS</h2>
+          </div>
+
+          {programs.length > 0 ? <div className="program-grid">
+            {programs.map((program) => (
+              <article key={program._id} className="program-card">
+                {program.imageUrl && <img src={program.imageUrl} alt={program.name} className="home-program-image" />}
+                <div className="program-top"><span className="program-badge">{program.badge || "Program"}</span></div>
+                <p className="program-level">{program.level}</p>
+                <h3>{program.name}</h3>
+                <p>{program.description}</p>
+                <div className="subject-list">{(program.features || []).map((feature) => <span key={feature}>{feature}</span>)}</div>
+                <a href="/programs" className="text-link">View program details</a>
+              </article>
+            ))}
+          </div> : <div className="home-program-empty"><h3>Programs will be announced soon.</h3><p>Our latest learning pathways will appear here as the academy publishes them.</p><a href="#enquire" className="primary-button">Enquire now</a></div>}
+        </div>
+      </section>
+
+      <section id="why-nga" className="content-section">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="section-header center">
+            <p className="eyebrow accent">Why parents choose us</p>
+            <h2>WHY CHOOSE NGA</h2>
+          </div>
+
+          <div className="reasons-grid">
+            {reasons.map((reason) => (
+              <div key={reason.title} className="reason-card">
+                <div className="reason-icon">✓</div>
+                <h3>{reason.title}</h3>
+                <p>{reason.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="content-section muted">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="section-header center">
+            <p className="eyebrow accent">Supporting every step</p>
+            <h2>HOW WE HELP STUDENTS GROW</h2>
+          </div>
+
+          <div className="steps-grid">
+            {steps.map((step) => (
+              <div key={step.number} className="step-card">
+                <span className="step-number">{step.number}</span>
+                <h3>{step.title}</h3>
+                <p>{step.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="achievements" className="content-section">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="section-header center">
+            <p className="eyebrow accent">Progress that matters</p>
+            <h2>STUDENT ACHIEVEMENTS</h2>
+          </div>
+
+          <div className="achievement-grid">
+            {achievementCards.map((item) => (
+              <div key={item.title} className="achievement-card">
+                <div className="star-mark">✦</div>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="testimonials" className="content-section muted">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="section-header center">
+            <p className="eyebrow accent">Parent and student voice</p>
+            <h2>WHAT PARENTS &amp; STUDENTS SAY</h2>
+          </div>
+
+          <div className="testimonial-grid">
+            {testimonialCards.map((item) => (
+              <blockquote key={item.label} className="testimonial-card">
+                <p>“{item.quote}”</p>
+                <footer>{item.label}</footer>
+              </blockquote>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="campus" className="content-section campus-section">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="section-header center">
+            <p className="eyebrow accent">Our campus</p>
+            <h2>VISIT OUR LOCATION</h2>
+            <p>Find Next GenLearning Academy in Kompally and get directions to our learning space.</p>
+          </div>
+          <div className="location-panel">
+            <div className="location-map-wrap">
+              <iframe
+                title="Next GenLearning Academy location in Kompally"
+                src="https://www.google.com/maps?q=Sri%20Vani%20Cycle%20Mechanic%2C%20Devender%20Colony%2C%20Kompally&output=embed"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
+            <div className="location-details">
+              <p className="eyebrow accent">Next GenLearning Academy</p>
+              <h3>Near Sri Vani Cycle Mechanic</h3>
+              <p>Visit us for concept clarity, focused practice and consistent academic support.</p>
+              <a href="https://www.google.com/maps/search/?api=1&query=Sri+Vani+Cycle+Mechanic%2C+Devender+Colony%2C+Kompally" target="_blank" rel="noreferrer" className="primary-button">Open in Google Maps</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="admission-band">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="admission-content">
+            <div>
+              <p className="eyebrow accent">Admission support</p>
+              <h2>READY TO HELP YOUR CHILD LEARN BETTER?</h2>
+              <p>Give your child the right guidance, stronger concepts and consistent academic support.</p>
+            </div>
+            <div className="admission-actions">
+              <a href="#enquire" className="primary-button">ENQUIRE NOW</a>
+              <a href="/contact" className="secondary-button dark">CONTACT US</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="enquire" className="content-section contact-section">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="contact-grid">
+            <div className="contact-details">
+              <p className="eyebrow accent">Get in touch</p>
+              <h2>CONTACT</h2>
+              <div className="contact-card">
+                <h3>{PLATFORM_NAME}</h3>
+                <p>Kompally</p>
+                <a href="tel:+919502477923">9502477923</a>
+                <div className="contact-links">
+                  <a href="tel:+919502477923" className="mini-action">Call Now</a>
+                  <a href="https://wa.me/919502477923" target="_blank" rel="noreferrer" className="mini-action alt">WhatsApp</a>
+                </div>
+              </div>
+            </div>
+
+            <form className="enquiry-form" onSubmit={handleSubmit} noValidate>
+              <div className="form-grid">
+                <label>
+                  <span>Student Name</span>
+                  <input type="text" name="studentName" value={form.studentName} onChange={handleChange} placeholder="Student Name" />
+                </label>
+                <label>
+                  <span>Parent Name</span>
+                  <input type="text" name="parentName" value={form.parentName} onChange={handleChange} placeholder="Parent Name" />
+                </label>
+                <label>
+                  <span>Class</span>
+                  <input type="text" name="className" value={form.className} onChange={handleChange} placeholder="Class" />
+                </label>
+                <label>
+                  <span>School</span>
+                  <input type="text" name="school" value={form.school} onChange={handleChange} placeholder="School" />
+                </label>
+                <label>
+                  <span>Phone Number</span>
+                  <input type="tel" name="phone" value={form.phone} onChange={handleChange} placeholder="Phone Number" />
+                </label>
+                <label>
+                  <span>Preferred Program</span>
+                  <input type="text" name="preferredProgram" value={form.preferredProgram} onChange={handleChange} placeholder="Preferred Program" />
+                </label>
+                <label className="full-width">
+                  <span>Message</span>
+                  <textarea name="message" value={form.message} onChange={handleChange} rows="4" placeholder="Tell us how we can help" />
+                </label>
+              </div>
+
+              {error && <p className="form-error">{error}</p>}
+              {submitted && <p className="form-success">Your enquiry is ready to send on WhatsApp.</p>}
+
+              <button type="submit" className="primary-button full-width" disabled={loading}>
+                {loading ? "Preparing enquiry..." : "ENQUIRE NOW"}
+              </button>
+            </form>
           </div>
         </div>
       </section>

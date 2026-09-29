@@ -1,78 +1,125 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { FaGraduationCap, FaBars, FaTimes } from "react-icons/fa";
+import { FaBars, FaTimes, FaUserCircle } from "react-icons/fa";
 import { PLATFORM_NAME, PLATFORM_TAGLINE } from "../config/branding";
+import ngaLogo from "../assets/nga-logo.png.jpeg";
+
+export const LogoMark = ({ className = "" }) => (
+  <img src={ngaLogo} className={className} alt="Next GenLearning Academy logo" />
+);
 
 const PublicLayout = ({ children }) => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const navLinks = [
-    { to: "/", label: "Home" },
-    { to: "/pricing", label: "Pricing" },
-    { to: "/about", label: "About" },
-    { to: "/contact", label: "Contact" },
+    { label: "Home", href: "/" },
+    { label: "Our Story", href: "/about" },
+    { label: "Programs", href: "/programs" },
+    { label: "Digital Hub", href: "/digital-hub" },
+    { label: "Portal", href: "/academy-login", icon: <FaUserCircle /> },
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-navy">
-      <header className="bg-navy text-white sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto px-4 lg:px-8 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gold flex items-center justify-center">
-              <FaGraduationCap className="text-navy text-lg" />
+    <div className="page-shell">
+      <header className="site-header">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="header-inner">
+            <Link to="/" className="brand-wrap" aria-label="Go to homepage">
+              <LogoMark className="logo-mark" />
+              <div>
+                <p className="brand-name">{PLATFORM_NAME}</p>
+                <p className="brand-tagline">{PLATFORM_TAGLINE}</p>
+              </div>
+            </Link>
+
+            <nav className="main-nav" aria-label="Main navigation">
+              {navLinks.map((link) => (
+                <a key={link.label} href={link.href} className="nav-link" onClick={() => setMenuOpen(false)}>
+                  {link.icon}{link.label}
+                </a>
+              ))}
+            </nav>
+
+            <div className="header-actions">
+              <a href="#enquire" className="primary-button small-button">
+                Enquiry Now
+              </a>
             </div>
-            <span className="font-display font-bold tracking-tight">{PLATFORM_NAME}</span>
-          </Link>
 
-          <nav className="hidden md:flex items-center gap-6">
-            {navLinks.map((l) => (
-              <Link key={l.to} to={l.to} className="text-sm text-slate-300 hover:text-white transition-colors">
-                {l.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="hidden md:flex items-center gap-3">
-            <Link to="/academy-login" className="btn-outline !border-slate-500 !text-white hover:!bg-navy-lighter text-sm py-2 px-4">
-              Academy Login
-            </Link>
-            <Link to="/register-academy" className="btn-primary text-sm py-2 px-4">
-              New Academy? Get Started
-            </Link>
+            <button
+              type="button"
+              className="mobile-menu-button"
+              aria-label="Toggle mobile menu"
+              onClick={() => setMenuOpen((current) => !current)}
+            >
+              {menuOpen ? <FaTimes /> : <FaBars />}
+            </button>
           </div>
-
-          <button className="md:hidden text-xl" onClick={() => setMenuOpen((o) => !o)}>
-            {menuOpen ? <FaTimes /> : <FaBars />}
-          </button>
         </div>
 
         {menuOpen && (
-          <div className="md:hidden bg-navy-light px-4 py-4 space-y-3">
-            {navLinks.map((l) => (
-              <Link key={l.to} to={l.to} onClick={() => setMenuOpen(false)} className="block text-sm text-slate-300 hover:text-white">
-                {l.label}
-              </Link>
+          <div className="mobile-menu">
+            {navLinks.map((link) => (
+              <a key={link.label} href={link.href} className="mobile-link" onClick={() => setMenuOpen(false)}>
+                {link.icon}{link.label}
+              </a>
             ))}
-            <Link to="/academy-login" onClick={() => setMenuOpen(false)} className="block text-sm text-gold font-medium">
-              Academy Login
-            </Link>
-            <Link to="/register-academy" onClick={() => setMenuOpen(false)} className="block text-sm text-gold font-medium">
-              New Academy? Get Started
-            </Link>
+            <a href="#enquire" className="primary-button full-width" onClick={() => setMenuOpen(false)}>
+              Enquiry Now
+            </a>
           </div>
         )}
       </header>
 
-      <main className="flex-1">{children}</main>
+      <main>{children}</main>
 
-      <footer className="bg-navy text-slate-400 text-sm">
-        <div className="max-w-6xl mx-auto px-4 lg:px-8 py-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p>&copy; {new Date().getFullYear()} {PLATFORM_NAME}. {PLATFORM_TAGLINE}</p>
-          <div className="flex gap-5">
-            <Link to="/pricing" className="hover:text-white">Pricing</Link>
-            <Link to="/about" className="hover:text-white">About</Link>
-            <Link to="/contact" className="hover:text-white">Contact</Link>
-            <Link to="/super-admin/login" className="hover:text-white">Super Admin</Link>
+      <footer className="site-footer">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="footer-grid">
+            <div>
+              <Link to="/" className="brand-wrap footer-brand">
+                <LogoMark className="logo-mark small" />
+                <div>
+                  <p className="brand-name">{PLATFORM_NAME}</p>
+                  <p className="brand-tagline">{PLATFORM_TAGLINE}</p>
+                </div>
+              </Link>
+            </div>
+
+            <div>
+              <h3>Quick Links</h3>
+              <ul>
+                <li><a href="/#top">Home</a></li>
+                <li><a href="/#about">About</a></li>
+                <li><a href="/#programs">Programs</a></li>
+                <li><a href="/#why-nga">Why NGA</a></li>
+                <li><a href="/#campus">Our Campus</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h3>Explore</h3>
+              <ul>
+                <li><a href="/#achievements">Achievements</a></li>
+                <li><a href="/#testimonials">Testimonials</a></li>
+                <li><a href="/contact">Contact</a></li>
+                <li><a href="/academy-login">Academy Login</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h3>Contact</h3>
+              <ul>
+                <li>Kompally</li>
+                <li><a href="tel:+919502477923">9502477923</a></li>
+                <li><a href="https://wa.me/919502477923" target="_blank" rel="noreferrer">WhatsApp</a></li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="footer-bottom">
+            <p>© {new Date().getFullYear()} {PLATFORM_NAME}. All rights reserved.</p>
+            <p>Learn Today. Lead Tomorrow.</p>
           </div>
         </div>
       </footer>

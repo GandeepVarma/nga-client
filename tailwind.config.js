@@ -11,9 +11,9 @@ export default {
           lighter: "#334155",
         },
         gold: {
-          DEFAULT: "#F59E0B",
-          light: "#FBBF24",
-          dark: "#D97706",
+          DEFAULT: "#D9A514",
+          light: "#F2D67A",
+          dark: "#B8840B",
         },
       },
       fontFamily: {

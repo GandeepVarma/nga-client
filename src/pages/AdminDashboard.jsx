@@ -40,7 +40,7 @@ const AdminDashboard = () => {
       {
         label: "Revenue",
         data: stats?.monthlyRevenueChart?.map((m) => m.revenue) || [],
-        backgroundColor: "#F59E0B",
+        backgroundColor: "#E08700",
         borderRadius: 6,
       },
     ],
@@ -52,7 +52,7 @@ const AdminDashboard = () => {
       {
         label: "Avg Score %",
         data: stats?.teacherPerformance?.map((t) => t.averageScorePercent ?? 0) || [],
-        backgroundColor: "#0F172A",
+        backgroundColor: "#1F4068",
         borderRadius: 6,
       },
     ],
@@ -84,7 +84,7 @@ const AdminDashboard = () => {
 
       {!loading && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-6">
-          <div className="card">
+          <div className="admin-chart-card card">
             <h3 className="font-display font-semibold text-navy dark:text-white mb-4">Monthly Revenue</h3>
             {revenueChartData.labels.length > 0 ? (
               <Bar data={revenueChartData} options={{ responsive: true, plugins: { legend: { display: false } } }} />
@@ -92,7 +92,7 @@ const AdminDashboard = () => {
               <p className="text-slate-400 text-sm">No fee collection data yet.</p>
             )}
           </div>
-          <div className="card">
+          <div className="admin-chart-card card">
             <h3 className="font-display font-semibold text-navy dark:text-white mb-4">Teacher Performance (Avg Test Score)</h3>
             {performanceChartData.labels.length > 0 ? (
               <Bar data={performanceChartData} options={{ responsive: true, plugins: { legend: { display: false } } }} />

@@ -14,6 +14,8 @@ import AcademyLogin from "./pages/public/AcademyLogin";
 import SuperAdminLogin from "./pages/public/SuperAdminLogin";
 import About from "./pages/public/About";
 import Contact from "./pages/public/Contact";
+import Programs from "./pages/public/Programs";
+import DigitalHub from "./pages/public/DigitalHub";
 import ChangePassword from "./pages/ChangePassword";
 
 // Admin-only pages
@@ -41,6 +43,9 @@ import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import AcademyManagement from "./pages/AcademyManagement";
 import AcademyCreate from "./pages/AcademyCreate";
 import AcademyDetails from "./pages/AcademyDetails";
+import ProgramManagement from "./pages/ProgramManagement";
+import StoryManagement from "./pages/StoryManagement";
+import DigitalHubManagement from "./pages/DigitalHubManagement";
 
 // Teacher-only
 import TeacherDashboard from "./pages/TeacherDashboard";
@@ -67,6 +72,8 @@ function App() {
         <Route path="/super-admin/login" element={<SuperAdminLogin />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/programs" element={<Programs />} />
+        <Route path="/digital-hub" element={<DigitalHub />} />
         <Route path="/account/password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
         {/* Legacy single-tab login page — kept working for existing bookmarks/links */}
         <Route path="/login" element={<Login />} />
@@ -83,6 +90,9 @@ function App() {
         <Route path="/admin/assign-students" element={<ProtectedRoute allowedRoles={["admin"]}><AssignStudents /></ProtectedRoute>} />
         <Route path="/admin/teacher-performance" element={<ProtectedRoute allowedRoles={["admin"]}><TeacherPerformance /></ProtectedRoute>} />
         <Route path="/admin/fees" element={<ProtectedRoute allowedRoles={["admin"]}><FeeManagement /></ProtectedRoute>} />
+        <Route path="/admin/programs" element={<ProtectedRoute allowedRoles={["admin"]}><ProgramManagement /></ProtectedRoute>} />
+        <Route path="/admin/story" element={<ProtectedRoute allowedRoles={["admin"]}><StoryManagement /></ProtectedRoute>} />
+        <Route path="/admin/digital-hub" element={<ProtectedRoute allowedRoles={["admin"]}><DigitalHubManagement /></ProtectedRoute>} />
         <Route path="/admin/students" element={<ProtectedRoute allowedRoles={["admin"]}><StudentManagement basePath="/admin" /></ProtectedRoute>} />
         <Route path="/admin/students/:id" element={<ProtectedRoute allowedRoles={["admin"]}><StudentProfile basePath="/admin" /></ProtectedRoute>} />
         <Route path="/admin/tests" element={<ProtectedRoute allowedRoles={["admin"]}><FeatureRoute feature="tests"><TestManagement /></FeatureRoute></ProtectedRoute>} />

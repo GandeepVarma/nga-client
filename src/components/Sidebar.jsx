@@ -23,6 +23,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { PLATFORM_NAME, PLATFORM_TAGLINE } from "../config/branding";
 import { hasFeature } from "../config/planFeatures";
+import ngaLogo from "../assets/nga-logo.png.jpeg";
 
 // Admin: full academy control, including teacher management and finances.
 const adminLinks = [
@@ -35,6 +36,9 @@ const adminLinks = [
   { to: "/admin/question-bank", label: "Question Bank", icon: FaQuestionCircle, feature: "studyMaterials" },
   { to: "/admin/assignments", label: "Assignments", icon: FaBookOpen, feature: "assignments" },
   { to: "/admin/fees", label: "Fees", icon: FaMoneyBillWave, feature: "fees" },
+  { to: "/admin/programs", label: "Programs", icon: FaGraduationCap, feature: "dashboard" },
+  { to: "/admin/story", label: "Our Story", icon: FaBookOpen, feature: "dashboard" },
+  { to: "/admin/digital-hub", label: "Digital Hub", icon: FaLaptopCode, feature: "dashboard" },
   { to: "/admin/attendance", label: "Attendance", icon: FaCalendarCheck, feature: "attendance" },
   { to: "/admin/teacher-performance", label: "Teacher Performance", icon: FaChartLine, feature: "analytics" },
   { to: "/admin/whatsapp/broadcast", label: "Broadcast", icon: FaWhatsapp, feature: "whatsappReminders" },
@@ -91,14 +95,12 @@ const Sidebar = ({ open, onClose }) => {
       {open && <div className="fixed inset-0 bg-black/40 z-30 lg:hidden" onClick={onClose} />}
 
       <aside
-        className={`fixed lg:static z-40 top-0 left-0 h-full w-64 bg-navy flex flex-col p-5 transition-transform duration-300 overflow-y-auto ${
+        className={`admin-sidebar fixed lg:static z-40 top-0 left-0 h-full w-64 bg-navy flex flex-col p-5 transition-transform duration-300 overflow-y-auto ${
           open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
         <div className="flex items-center gap-3 px-2 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-gold flex items-center justify-center shrink-0">
-            <FaGraduationCap className="text-navy text-lg" />
-          </div>
+          <img src={ngaLogo} alt="Next GenLearning Academy logo" className="admin-brand-logo w-10 h-10 rounded-xl object-contain shrink-0" />
           <div className="leading-tight">
             <p className="font-display font-bold text-white text-sm">{PLATFORM_NAME}</p>
             {user?.academyName && <p className="text-slate-400 text-xs truncate" title={user.academyName}>{user.academyName}</p>}

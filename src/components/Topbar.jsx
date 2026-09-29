@@ -20,7 +20,7 @@ const Topbar = ({ onMenuClick, title }) => {
   };
 
   return (
-    <header className="h-16 flex items-center justify-between px-4 lg:px-8 bg-white dark:bg-navy-light border-b border-slate-100 dark:border-navy-lighter sticky top-0 z-20">
+    <header className="admin-topbar h-16 flex items-center justify-between px-4 lg:px-8 bg-white dark:bg-navy-light border-b border-slate-100 dark:border-navy-lighter sticky top-0 z-20">
       <div className="flex items-center gap-4">
         <button
           className="lg:hidden text-slate-600 dark:text-slate-300 text-xl"

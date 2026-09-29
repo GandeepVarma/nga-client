@@ -3,7 +3,7 @@ import React from "react";
 // icon: react-icon component, accent: tailwind color class for the icon chip
 const StatCard = ({ icon: Icon, label, value, accent = "bg-gold/15 text-gold" }) => {
   return (
-    <div className="card flex items-center gap-4">
+    <div className="admin-stat-card card flex items-center gap-4">
       <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl ${accent}`}>
         <Icon />
       </div>

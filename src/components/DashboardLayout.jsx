@@ -9,7 +9,7 @@ const DashboardLayout = ({ title, children }) => {
   const subscription = user?.academy;
 
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-navy">
+    <div className="admin-shell flex min-h-screen bg-slate-50 dark:bg-navy">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 flex flex-col min-w-0">
         <Topbar title={title} onMenuClick={() => setSidebarOpen(true)} />
@@ -22,7 +22,7 @@ const DashboardLayout = ({ title, children }) => {
                 : "Your academy subscription is suspended. Please contact support."}
           </div>
         )}
-        <main className="flex-1 p-4 lg:p-8">{children}</main>
+        <main className="admin-main flex-1 p-4 lg:p-8">{children}</main>
       </div>
     </div>
   );
