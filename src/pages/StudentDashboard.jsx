@@ -27,7 +27,7 @@ const StudentDashboard = () => {
 
   const chartData = {
     labels: data.progressGraph.filter((t) => t.percentage !== null).map((t) => t.testName),
-    datasets: [{ label: "% Score", data: data.progressGraph.filter((t) => t.percentage !== null).map((t) => t.percentage), borderColor: "#F59E0B", backgroundColor: "rgba(245, 158, 11, 0.15)", tension: 0.35, fill: true }],
+    datasets: [{ label: "% Score", data: data.progressGraph.filter((t) => t.percentage !== null).map((t) => t.percentage), borderColor: "#244A76", backgroundColor: "rgba(242, 169, 0, 0.15)", tension: 0.35, fill: true }],
   };
 
   return (
@@ -42,7 +42,7 @@ const StudentDashboard = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
         <StatCard icon={FaCalendarCheck} label="Attendance" value={`${data.attendancePercentage}%`} accent="bg-emerald-500/15 text-emerald-500" />
-        <StatCard icon={FaClipboardList} label="Upcoming Tests" value={data.upcomingTests.length} accent="bg-purple-500/15 text-purple-500" />
+        <StatCard icon={FaClipboardList} label="Upcoming Tests" value={data.upcomingTests.length} accent="bg-navy/15 text-navy" />
         <StatCard icon={FaBookOpen} label="Pending Assignments" value={data.pendingAssignmentsCount} accent="bg-amber-500/15 text-amber-500" />
         <StatCard icon={FaMoneyBillWave} label="Fee Pending" value={`₹${data.feeStatus?.pending ?? 0}`} accent="bg-red-500/15 text-red-500" />
       </div>

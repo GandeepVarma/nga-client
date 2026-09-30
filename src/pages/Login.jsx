@@ -43,7 +43,7 @@ const Login = () => {
         <div
           className="absolute inset-0 opacity-[0.07]"
           style={{
-            backgroundImage: "radial-gradient(circle at 2px 2px, #F59E0B 1.5px, transparent 0)",
+            backgroundImage: "radial-gradient(circle at 2px 2px, #F2A900 1.5px, transparent 0)",
             backgroundSize: "28px 28px",
           }}
         />

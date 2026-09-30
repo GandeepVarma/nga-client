@@ -31,7 +31,7 @@ const OnlineTestAnalytics = ({ basePath = "/teacher" }) => {
 
   const distributionChart = {
     labels: data.scoreDistribution.labels,
-    datasets: [{ label: "Students", data: data.scoreDistribution.counts, backgroundColor: "#F59E0B", borderRadius: 6 }],
+    datasets: [{ label: "Students", data: data.scoreDistribution.counts, backgroundColor: "#F2A900", borderRadius: 6 }],
   };
 
   return (

@@ -6,14 +6,14 @@ export default {
     extend: {
       colors: {
         navy: {
-          DEFAULT: "#0F172A",
-          light: "#1E293B",
-          lighter: "#334155",
+          DEFAULT: "#244A76",
+          light: "#1D3B5F",
+          lighter: "#315F8F",
         },
         gold: {
-          DEFAULT: "#D9A514",
-          light: "#F2D67A",
-          dark: "#B8840B",
+          DEFAULT: "#F2A900",
+          light: "#F4C20D",
+          dark: "#D89100",
         },
       },
       fontFamily: {
@@ -21,8 +21,8 @@ export default {
         body: ["'Inter'", "sans-serif"],
       },
       boxShadow: {
-        card: "0 4px 24px -8px rgba(15, 23, 42, 0.12)",
-        "card-hover": "0 8px 32px -8px rgba(15, 23, 42, 0.2)",
+        card: "0 4px 24px -8px rgba(29, 59, 95, 0.12)",
+        "card-hover": "0 8px 32px -8px rgba(29, 59, 95, 0.2)",
       },
       borderRadius: {
         xl2: "1.25rem",

@@ -27,7 +27,7 @@ const SuperAdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
       <div className="w-full max-w-sm px-4">
         <div className="text-center mb-8">
           <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mx-auto mb-4">
@@ -38,7 +38,7 @@ const SuperAdminLogin = () => {
           <p className="text-slate-500 text-sm mt-1">Platform owner access only</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 rounded-xl2 p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-xl2 p-6 space-y-4">
           <div>
             <label className="text-sm font-medium text-slate-300 block mb-1.5">Email</label>
             <input

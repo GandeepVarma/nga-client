@@ -22,7 +22,7 @@ const TeacherPerformance = () => {
   const chartData = {
     labels: performance.map((t) => t.name),
     datasets: [
-      { label: "Students", data: performance.map((t) => t.studentCount), backgroundColor: "#0F172A", borderRadius: 6 },
+      { label: "Students", data: performance.map((t) => t.studentCount), backgroundColor: "#244A76", borderRadius: 6 },
     ],
   };
 

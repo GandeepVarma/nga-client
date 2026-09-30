@@ -34,7 +34,7 @@ const TeacherDashboard = () => {
             value={`${stats?.todaysAttendance?.present ?? 0} / ${stats?.todaysAttendance?.totalStudents ?? 0}`}
             accent="bg-emerald-500/15 text-emerald-500"
           />
-          <StatCard icon={FaClipboardList} label="Upcoming Tests" value={stats?.upcomingTests ?? 0} accent="bg-purple-500/15 text-purple-500" />
+          <StatCard icon={FaClipboardList} label="Upcoming Tests" value={stats?.upcomingTests ?? 0} accent="bg-navy/15 text-navy" />
           <StatCard icon={FaBookOpen} label="Assignments Pending" value={stats?.assignmentsPending ?? 0} accent="bg-amber-500/15 text-amber-500" />
         </div>
       )}

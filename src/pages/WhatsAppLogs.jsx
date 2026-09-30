@@ -18,7 +18,7 @@ const typeLabels = {
 const statusStyle = {
   sent: "bg-blue-100 text-blue-700",
   delivered: "bg-emerald-100 text-emerald-700",
-  read: "bg-purple-100 text-purple-700",
+  read: "bg-navy/10 text-navy",
   failed: "bg-red-100 text-red-700",
   queued: "bg-slate-200 text-slate-600",
 };
@@ -77,7 +77,7 @@ const WhatsAppLogs = () => {
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
           <StatCard icon={FaCheckCircle} label="Sent Today" value={summary.sentToday} accent="bg-blue-500/15 text-blue-500" />
           <StatCard icon={FaCheckCircle} label="Delivered" value={summary.deliveredToday} accent="bg-emerald-500/15 text-emerald-500" />
-          <StatCard icon={FaEye} label="Read" value={summary.readToday} accent="bg-purple-500/15 text-purple-500" />
+          <StatCard icon={FaEye} label="Read" value={summary.readToday} accent="bg-navy/15 text-navy" />
           <StatCard icon={FaTimesCircle} label="Failed" value={summary.failedToday} accent="bg-red-500/15 text-red-500" />
           <StatCard icon={FaClock} label="Pending" value={summary.pendingToday} accent="bg-amber-500/15 text-amber-500" />
         </div>

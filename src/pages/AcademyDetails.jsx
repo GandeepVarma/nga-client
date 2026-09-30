@@ -113,7 +113,7 @@ const AcademyDetails = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">
         <StatCard icon={FaUserGraduate} label="Students" value={usage.students} accent="bg-blue-500/15 text-blue-500" />
-        <StatCard icon={FaUserTie} label="Teachers" value={usage.teachers} accent="bg-purple-500/15 text-purple-500" />
+        <StatCard icon={FaUserTie} label="Teachers" value={usage.teachers} accent="bg-navy/15 text-navy" />
         <StatCard icon={FaUsers} label="Parent Contacts (linked via students)" value={usage.parentContactsLinkedViaStudents} accent="bg-gold/15 text-gold" />
       </div>
 

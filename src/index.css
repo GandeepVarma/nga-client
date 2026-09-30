@@ -5,18 +5,19 @@
 @tailwind utilities;
 
 :root {
-  --navy-950: #0b1230;
-  --navy-900: #0f1f3d;
-  --navy-800: #1a2d52;
-  --gold-500: #d9a514;
-  --gold-600: #b8840b;
-  --cream-50: #faf7f2;
-  --cream-100: #f5f0e8;
+  --navy-950: #1D3B5F;
+  --navy-900: #244A76;
+  --navy-800: #315F8F;
+  --gold-500: #F2A900;
+  --gold-600: #D89100;
+  --cream-50: #EAF1F8;
+  --cream-100: #DCE7F2;
   --white: #ffffff;
-  --gray-100: #f3f4f6;
-  --gray-200: #e5e7eb;
-  --gray-600: #4b5563;
-  --gray-900: #111827;
+  --gray-100: #EAF1F8;
+  --gray-200: #D5E1ED;
+  --gray-600: #718096;
+  --gray-700: #475569;
+  --gray-900: #172033;
 }
 
 html {
@@ -25,7 +26,7 @@ html {
 
 body {
   font-family: "Inter", sans-serif;
-  background: #f6f3ee;
+  background: #EAF1F8;
   color: var(--gray-900);
 }
 
@@ -67,7 +68,7 @@ img, svg {
   }
 
   .secondary-button.dark {
-    @apply border border-slate-700 bg-slate-900 text-white hover:bg-slate-800;
+    @apply border border-navy-light bg-navy-light text-white hover:bg-navy-lighter;
   }
 
   .small-button {
@@ -821,6 +822,24 @@ img, svg {
   color: #166534;
 }
 
+.portal-login-shell,
+.portal-brand,
+.portal-login-card,
+.portal-login-form,
+.field-block,
+.input-with-icon {
+  min-width: 0;
+}
+
+.portal-brand > div,
+.input-with-icon input {
+  min-width: 0;
+}
+
+.portal-brand h1 {
+  overflow-wrap: anywhere;
+}
+
 .page-copy-card {
   padding: 1.8rem;
   display: grid;
@@ -1545,13 +1564,13 @@ body {
 
 /* Authenticated dashboard shell */
 .admin-shell {
-  background: #2E5A88 !important;
-  color: #111111;
+  background: #EAF1F8 !important;
+  color: #172033;
 }
 
 .admin-sidebar {
   width: 260px;
-  background: #1F4068 !important;
+  background: #244A76 !important;
   border-right: 1px solid rgba(159, 176, 204, 0.12);
 }
 
@@ -1588,7 +1607,7 @@ body {
 
 .admin-topbar {
   height: 66px;
-  background: #1F4068 !important;
+  background: #244A76 !important;
   border-bottom-color: rgba(159, 176, 204, 0.18) !important;
 }
 
@@ -1604,7 +1623,7 @@ body {
 }
 
 .admin-main {
-  background: #2E5A88;
+  background: #EAF1F8;
 }
 
 .admin-main .card,
@@ -1683,8 +1702,8 @@ body {
 
 .admin-form-field input:focus,
 .admin-form-field textarea:focus {
-  border-color: #2e5a88;
-  box-shadow: 0 0 0 3px rgba(46, 90, 136, 0.14);
+  border-color: #F2A900;
+  box-shadow: 0 0 0 3px rgba(242, 169, 0, 0.16);
 }
 
 .admin-program-card {
@@ -1940,6 +1959,477 @@ body {
 .admin-main .card .text-slate-400,
 .admin-main .card .text-slate-500 {
   color: #91a2c0;
+}
+
+/* NextGen Learning Academy brand colors */
+body,
+.page-shell,
+.admin-shell,
+.admin-main,
+.programs-page-section,
+.digital-hub-section {
+  background-color: #EAF1F8;
+  color: #172033;
+}
+
+.site-header,
+.admin-sidebar,
+.admin-topbar,
+.portal-tab.active {
+  background-color: #244A76;
+}
+
+.site-header,
+.admin-sidebar,
+.admin-topbar {
+  background-image: none;
+}
+
+.admin-sidebar .sidebar-link {
+  color: #EAF1F8;
+}
+
+.admin-sidebar .sidebar-link.active,
+.admin-sidebar .sidebar-link.active:hover {
+  background: #F2A900;
+  color: #1D3B5F;
+  box-shadow: 0 10px 24px rgba(242, 169, 0, 0.2);
+}
+
+.nav-link,
+.brand-name,
+.mobile-menu-button,
+.admin-topbar h1 {
+  color: #FFFFFF;
+}
+
+.nav-link:hover,
+.nav-link:focus-visible,
+.nav-link::after,
+.header-link:hover {
+  color: #F4C20D;
+}
+
+.primary-button,
+.btn-primary,
+.portal-submit-button,
+.resource-button {
+  background: #F2A900;
+  color: #1D3B5F;
+  box-shadow: 0 12px 26px rgba(242, 169, 0, 0.18);
+}
+
+.primary-button:hover,
+.btn-primary:hover,
+.portal-submit-button:hover,
+.resource-button:hover {
+  background: #D89100;
+  color: #1D3B5F;
+}
+
+.secondary-button,
+.btn-secondary {
+  border-color: #244A76;
+  background: #FFFFFF;
+  color: #1D3B5F;
+}
+
+.secondary-button:hover,
+.btn-secondary:hover {
+  border-color: #1D3B5F;
+  background: #EAF1F8;
+  color: #1D3B5F;
+}
+
+.hero-section,
+.content-section,
+.campus-section,
+.portal-login-wrapper {
+  background: #EAF1F8;
+}
+
+.page-banner,
+.admission-content {
+  background: #244A76;
+}
+
+.hero-title,
+.headline-stack,
+.section-header h1,
+.section-header h2,
+.portal-header-block h2,
+.program-card h3,
+.reason-card h3,
+.step-card h3,
+.achievement-card h3,
+.contact-card h3,
+.enquiry-form h2,
+.location-details h3,
+.story-narrative h2,
+.featured-program-copy h2,
+.resource-card h3,
+.hub-placeholder-grid h3 {
+  color: #172033;
+}
+
+.hero-title strong,
+.headline-stack strong,
+.hero-badge,
+.hero-copy .eyebrow,
+.eyebrow.accent,
+.eyebrow,
+.hero-book-art,
+.hero-symbol,
+.program-level,
+.program-fee,
+.step-number,
+.star-mark,
+.testimonial-card footer,
+.portal-header-block p,
+.portal-academy-context,
+.story-portrait-caption p,
+.story-quote svg,
+.story-signature span,
+.digital-closing-quote svg {
+  color: #244A76;
+}
+
+.hero-title strong {
+  background: none;
+  color: #244A76;
+}
+
+.hero-text,
+.headline-stack span,
+.section-header > p:last-child,
+.about-copy,
+.program-card p,
+.reason-card p,
+.step-card p,
+.achievement-card p,
+.testimonial-card p,
+.page-copy-card p,
+.contact-card p,
+.resource-card p,
+.location-details > p:not(.eyebrow),
+.story-narrative > p,
+.digital-hub-intro {
+  color: #718096;
+}
+
+.mini-card,
+.program-card,
+.reason-card,
+.step-card,
+.achievement-card,
+.testimonial-card,
+.page-copy-card,
+.enquiry-form,
+.contact-card,
+.location-panel,
+.trust-grid,
+.portal-brand,
+.portal-login-card,
+.featured-program,
+.resource-card,
+.digital-reference-card,
+.hub-placeholder-grid > div,
+.program-empty-state {
+  background: #FFFFFF;
+  border-color: rgba(36, 74, 118, 0.14);
+  box-shadow: 0 12px 28px rgba(29, 59, 95, 0.08);
+}
+
+.trust-item,
+.hero-illustration,
+.hero-doodle-grid,
+.hero-book-art,
+.featured-program-art,
+.digital-video-preview,
+.digital-placeholder-media,
+.instagram-placeholder-grid span,
+.gallery-card.warm,
+.gallery-card.violet,
+.gallery-card.blue,
+.gallery-card.cyan,
+.gallery-card.gold,
+.gallery-card.teal {
+  background: linear-gradient(135deg, #EAF1F8, #DCE7F2);
+}
+
+.trust-item strong,
+.trust-item span,
+.mini-card strong,
+.program-card h3,
+.reason-card h3,
+.step-card h3,
+.achievement-card h3,
+.contact-card h3,
+.enquiry-form h2,
+.location-details h3,
+.story-narrative h2,
+.story-narrative > p.story-lead,
+.story-quote p,
+.story-signature strong,
+.featured-program-copy h2,
+.featured-program-copy ul,
+.featured-program-art span,
+.resource-card h3,
+.digital-card-brand strong,
+.hub-placeholder-grid h3,
+.program-empty-state h2 {
+  color: #172033;
+}
+
+.program-badge,
+.reason-icon,
+.star-mark,
+.hero-symbol,
+.portal-mode-tabs,
+.portal-tab.active,
+.program-tab.active,
+.program-tab.active small {
+  background: #F2A900;
+  color: #1D3B5F;
+}
+
+.program-tab,
+.portal-tab,
+.field-label,
+.enquiry-form label,
+.digital-reference-card,
+.digital-card-body > p,
+.digital-card-body li,
+.digital-closing-quote {
+  color: #718096;
+}
+
+.program-tab.active {
+  border-color: #F2A900;
+  box-shadow: inset 0 -2px 0 #F2A900;
+}
+
+.enquiry-form input,
+.enquiry-form textarea,
+.input-with-icon,
+.input-with-icon input,
+.input-with-icon select,
+.admin-form-field input,
+.admin-form-field textarea {
+  background: #FFFFFF;
+  border-color: #C9D7E6;
+  color: #172033;
+}
+
+.enquiry-form input:focus,
+.enquiry-form textarea:focus,
+.input-field:focus,
+.input-with-icon:focus-within,
+.admin-form-field input:focus,
+.admin-form-field textarea:focus {
+  border-color: #F2A900;
+  box-shadow: 0 0 0 3px rgba(242, 169, 0, 0.16);
+}
+
+.admin-topbar button[aria-label="Toggle dark mode"] {
+  background: rgba(255, 255, 255, 0.12);
+  color: #F4C20D;
+}
+
+.admin-main .card,
+.admin-stat-card,
+.admin-chart-card,
+.admin-form-panel,
+.admin-program-card {
+  background: #FFFFFF;
+  border-color: rgba(36, 74, 118, 0.14);
+  box-shadow: 0 8px 24px rgba(29, 59, 95, 0.08);
+}
+
+.admin-main table thead tr {
+  background: #244A76;
+  color: #FFFFFF;
+}
+
+.admin-main table tbody tr {
+  background: #FFFFFF;
+}
+
+.admin-main table th,
+.admin-main table td,
+.admin-main .card.mt-6 .border-b {
+  border-color: #D5E1ED;
+}
+
+.admin-main table tbody td,
+.admin-main table tbody td .text-slate-400,
+.admin-main table tbody td .text-slate-500 {
+  color: #172033 !important;
+}
+
+.admin-main table tbody tr:hover {
+  background: #EAF1F8;
+}
+
+.admin-chart-card h3,
+.admin-main .card h3,
+.admin-main .card.mt-6 h3,
+.admin-main .card.mt-6 .text-navy,
+.admin-main .card.mt-6 .dark\:text-white,
+.admin-stat-card p:last-of-type {
+  color: #172033 !important;
+}
+
+.admin-stat-card p:first-of-type,
+.admin-main .card .text-slate-400,
+.admin-main .card .text-slate-500 {
+  color: #718096;
+}
+
+.site-footer {
+  background: #1D3B5F;
+  border-top-color: rgba(255, 255, 255, 0.16);
+}
+
+.footer-grid h3,
+.footer-grid ul,
+.footer-grid a,
+.footer-bottom {
+  color: #FFFFFF;
+}
+
+.site-footer .footer-grid h3::after,
+.section-header::after {
+  background: #F2A900;
+}
+
+.page-banner h1,
+.hero-badge,
+.program-tab svg,
+.featured-program-copy li svg {
+  color: #F2A900;
+}
+
+.story-photo-placeholder,
+.story-portrait-caption,
+.story-quote,
+.digital-video-preview,
+.digital-placeholder-media,
+.program-empty-state {
+  background: #FFFFFF;
+  border-color: #D5E1ED;
+}
+
+.site-header .primary-button,
+.admin-sidebar .sidebar-link.active {
+  color: #1D3B5F;
+}
+
+.badge,
+.status-badge {
+  border-color: rgba(36, 74, 118, 0.12);
+}
+
+.portal-brand h1 {
+  color: #244A76;
+}
+
+.portal-mode-tabs {
+  background: #EAF1F8;
+}
+
+.portal-tab.active {
+  background: #F2A900;
+  color: #1D3B5F;
+}
+
+.subject-list span {
+  background: #EAF1F8;
+  color: #244A76;
+}
+
+.featured-program-copy > p:not(.eyebrow):not(.program-fee),
+.program-empty-state p,
+.digital-card-body > p,
+.digital-card-body li,
+.digital-closing-quote {
+  color: #718096;
+}
+
+.featured-program-copy li,
+.digital-video-preview a,
+.digital-placeholder-media {
+  color: #172033;
+}
+
+.gallery-card.warm,
+.gallery-card.violet,
+.gallery-card.blue,
+.gallery-card.cyan,
+.gallery-card.gold,
+.gallery-card.teal {
+  background: linear-gradient(135deg, #244A76, #1D3B5F);
+}
+
+.hero-title strong {
+  background-image: linear-gradient(90deg, #F2A900, #F4C20D);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.contact-card,
+.enquiry-form {
+  color: #172033;
+}
+
+.text-blue-500 {
+  color: #244A76;
+}
+
+.bg-blue-500\/15 {
+  background-color: rgba(36, 74, 118, 0.15);
+}
+
+.content-section.muted {
+  background: #DCE7F2;
+}
+
+.contact-card a,
+.text-link,
+.resource-kicker,
+.hub-placeholder-grid span,
+.portal-header-block p,
+.portal-academy-context {
+  color: #244A76;
+}
+
+.program-level,
+.program-fee {
+  color: #244A76 !important;
+}
+
+.hero-badge {
+  background: rgba(242, 169, 0, 0.12);
+  color: #244A76;
+}
+
+.home-program-empty h3 {
+  color: #172033;
+}
+
+.home-program-empty p {
+  color: #718096;
+}
+
+.form-error {
+  background: rgba(239, 68, 68, 0.08);
+  color: #B91C1C;
+}
+
+.form-success {
+  background: rgba(34, 197, 94, 0.08);
+  color: #166534;
 }
 
 @media (max-width: 1023px) {

@@ -19,11 +19,17 @@ const AcademyLogin = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    api.get("/public/academies").then((res) => {
+    const controller = new AbortController();
+
+    api.get("/public/academies", { signal: controller.signal }).then((res) => {
       const activeAcademies = res.data.data || [];
       setAcademies(activeAcademies);
       if (activeAcademies[0]?._id) setAcademyId(activeAcademies[0]._id);
-    }).catch(() => toast.error("Could not load academy details"));
+    }).catch(() => {
+      if (!controller.signal.aborted) toast.error("Could not load academy details");
+    });
+
+    return () => controller.abort();
   }, []);
 
   const handleSubmit = async (e) => {

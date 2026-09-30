@@ -35,7 +35,7 @@ const SuperAdminDashboard = () => {
             <StatCard icon={FaCheckCircle} label="Active Academies" value={stats.activeAcademies} accent="bg-emerald-500/15 text-emerald-500" />
             <StatCard icon={FaClock} label="Pending Review" value={stats.pendingAcademies} accent="bg-amber-500/15 text-amber-500" />
             <StatCard icon={FaBan} label="Suspended" value={stats.suspendedAcademies} accent="bg-red-500/15 text-red-500" />
-            <StatCard icon={FaUserGraduate} label="Total Students (platform-wide)" value={stats.totalStudents} accent="bg-purple-500/15 text-purple-500" />
+            <StatCard icon={FaUserGraduate} label="Total Students (platform-wide)" value={stats.totalStudents} accent="bg-navy/15 text-navy" />
             <StatCard icon={FaUserTie} label="Total Teachers (platform-wide)" value={stats.totalTeachers} accent="bg-gold/15 text-gold" />
           </div>
 

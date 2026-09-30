@@ -49,8 +49,8 @@ const StudentProfile = ({ basePath = "/teacher" }) => {
       {
         label: "% Score",
         data: performance.filter((t) => t.marksObtained !== null).slice(0, 8).reverse().map((t) => Number(((t.marksObtained / t.maxMarks) * 100).toFixed(1))),
-        borderColor: "#F59E0B",
-        backgroundColor: "rgba(245, 158, 11, 0.15)",
+        borderColor: "#244A76",
+        backgroundColor: "rgba(242, 169, 0, 0.15)",
         tension: 0.35,
         fill: true,
       },
