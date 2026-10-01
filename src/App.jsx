@@ -15,6 +15,7 @@ import SuperAdminLogin from "./pages/public/SuperAdminLogin";
 import About from "./pages/public/About";
 import Contact from "./pages/public/Contact";
 import Programs from "./pages/public/Programs";
+import Results from "./pages/public/Results";
 import DigitalHub from "./pages/public/DigitalHub";
 import ChangePassword from "./pages/ChangePassword";
 
@@ -44,6 +45,7 @@ import AcademyManagement from "./pages/AcademyManagement";
 import AcademyCreate from "./pages/AcademyCreate";
 import AcademyDetails from "./pages/AcademyDetails";
 import ProgramManagement from "./pages/ProgramManagement";
+import ResultsManagement from "./pages/ResultsManagement";
 import StoryManagement from "./pages/StoryManagement";
 import DigitalHubManagement from "./pages/DigitalHubManagement";
 
@@ -73,6 +75,7 @@ function App() {
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/programs" element={<Programs />} />
+        <Route path="/results" element={<Results />} />
         <Route path="/digital-hub" element={<DigitalHub />} />
         <Route path="/account/password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
         {/* Legacy single-tab login page — kept working for existing bookmarks/links */}
@@ -91,6 +94,7 @@ function App() {
         <Route path="/admin/teacher-performance" element={<ProtectedRoute allowedRoles={["admin"]}><TeacherPerformance /></ProtectedRoute>} />
         <Route path="/admin/fees" element={<ProtectedRoute allowedRoles={["admin"]}><FeeManagement /></ProtectedRoute>} />
         <Route path="/admin/programs" element={<ProtectedRoute allowedRoles={["admin"]}><ProgramManagement /></ProtectedRoute>} />
+        <Route path="/admin/results" element={<ProtectedRoute allowedRoles={["admin"]}><ResultsManagement /></ProtectedRoute>} />
         <Route path="/admin/story" element={<ProtectedRoute allowedRoles={["admin"]}><StoryManagement /></ProtectedRoute>} />
         <Route path="/admin/digital-hub" element={<ProtectedRoute allowedRoles={["admin"]}><DigitalHubManagement /></ProtectedRoute>} />
         <Route path="/admin/students" element={<ProtectedRoute allowedRoles={["admin"]}><StudentManagement basePath="/admin" /></ProtectedRoute>} />

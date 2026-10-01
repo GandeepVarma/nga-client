@@ -37,6 +37,7 @@ const adminLinks = [
   { to: "/admin/assignments", label: "Assignments", icon: FaBookOpen, feature: "assignments" },
   { to: "/admin/fees", label: "Fees", icon: FaMoneyBillWave, feature: "fees" },
   { to: "/admin/programs", label: "Programs", icon: FaGraduationCap, feature: "dashboard" },
+  { to: "/admin/results", label: "Student Results", icon: FaChartLine, feature: "dashboard" },
   { to: "/admin/story", label: "Our Story", icon: FaBookOpen, feature: "dashboard" },
   { to: "/admin/digital-hub", label: "Digital Hub", icon: FaLaptopCode, feature: "dashboard" },
   { to: "/admin/attendance", label: "Attendance", icon: FaCalendarCheck, feature: "attendance" },

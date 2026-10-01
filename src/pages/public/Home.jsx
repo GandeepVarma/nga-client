@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import PublicLayout from "../../components/PublicLayout";
+import api from "../../api/axios";
+import { useAuth } from "../../context/AuthContext";
 import { PLATFORM_NAME, PLATFORM_TAGLINE } from "../../config/branding";
-import { FaAtom, FaBookOpen, FaCalculator, FaFlask, FaLightbulb, FaPencilAlt } from "react-icons/fa";
+import { FaAtom, FaLock, FaUser, FaUserGraduate } from "react-icons/fa";
 
 const trustPoints = [
   { value: "5+ Years", label: "Experienced Tutor" },
@@ -50,22 +54,91 @@ const defaultForm = {
 };
 
 const Home = () => {
+  const [academies, setAcademies] = useState([]);
+  const [academyId, setAcademyId] = useState("");
+  const [studentId, setStudentId] = useState("");
+  const [portalPassword, setPortalPassword] = useState("");
+  const [portalLoading, setPortalLoading] = useState(false);
   const [programs, setPrograms] = useState([]);
+  const [programsLoading, setProgramsLoading] = useState(true);
   const [form, setForm] = useState(defaultForm);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const { loginStudent } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const controller = new AbortController();
+    api.get("/public/academies", { signal: controller.signal })
+      .then((response) => {
+        const activeAcademies = response.data.data || [];
+        setAcademies(activeAcademies);
+        setAcademyId(activeAcademies[0]?._id || "");
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) toast.error("Could not load academy details");
+      });
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000/api"}/public/programs`)
       .then((response) => response.json())
       .then((response) => setPrograms(response.data || []))
-      .catch(() => setPrograms([]));
+      .catch(() => setPrograms([]))
+      .finally(() => setProgramsLoading(false));
   }, []);
+
+  useEffect(() => {
+    const homeShell = document.querySelector('[data-homepage="true"]');
+    if (!homeShell || window.matchMedia("(prefers-reduced-motion: reduce)").matches || typeof IntersectionObserver === "undefined") return;
+
+    homeShell.dataset.motionReady = "true";
+    const revealTargets = homeShell.querySelectorAll("[data-scroll-reveal], [data-scroll-stagger]");
+    revealTargets.forEach((target) => {
+      if (!target.hasAttribute("data-scroll-stagger")) return;
+      Array.from(target.children).forEach((child, index) => {
+        child.style.setProperty("--reveal-delay", `${Math.min(index * 70, 350)}ms`);
+      });
+    });
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-revealed");
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.2, rootMargin: "0px 0px -6% 0px" });
+
+    revealTargets.forEach((target) => observer.observe(target));
+    return () => {
+      observer.disconnect();
+    };
+  }, [programs]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleStudentLogin = async (event) => {
+    event.preventDefault();
+    if (!academyId) {
+      toast.error("No active academy is available for login");
+      return;
+    }
+
+    setPortalLoading(true);
+    try {
+      await loginStudent(studentId.trim(), portalPassword, academyId);
+      toast.success("Welcome back!");
+      navigate("/student/dashboard");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Login failed");
+    } finally {
+      setPortalLoading(false);
+    }
   };
 
   const handleSubmit = (event) => {
@@ -104,46 +177,60 @@ const Home = () => {
   };
 
   return (
-    <PublicLayout>
+    <PublicLayout homepage>
       <section id="top" className="hero-section">
         <div className="hero-pattern" aria-hidden="true" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
           <div className="hero-grid">
             <div className="hero-copy">
-              <p className="hero-badge"><FaAtom /> FOUNDATION &amp; ACADEMIC SUPPORT</p>
-              <p className="eyebrow">{PLATFORM_NAME}</p>
-              <h1 className="hero-title">DON&apos;T JUST STUDY.<br /><strong>UNDERSTAND.</strong></h1>
-              <div className="headline-stack">
+              <p className="hero-badge hero-intro-badge"><FaAtom /> FOUNDATION &amp; ACADEMIC SUPPORT</p>
+              <p className="eyebrow hero-intro-eyebrow">{PLATFORM_NAME}</p>
+              <h1 className="hero-title"><span className="hero-title-first">DON&apos;T JUST STUDY.</span><br /><strong className="hero-title-second">UNDERSTAND.</strong></h1>
+              <div className="headline-stack hero-intro-tagline">
                 <span>{PLATFORM_TAGLINE}</span>
               </div>
-              <p className="hero-text">Because real learning begins when concepts become clear.</p>
-              <div className="cta-row">
+              <p className="hero-text hero-intro-description">Because real learning begins when concepts become clear.</p>
+              <div className="cta-row hero-intro-actions">
                 <a href="#enquire" className="primary-button">ENQUIRE NOW</a>
                 <a href="#programs" className="secondary-button">EXPLORE PROGRAMS</a>
               </div>
             </div>
 
-            <div className="hero-art" aria-hidden="true">
-              <div className="hero-doodle-grid">
-                <span className="hero-symbol symbol-one"><FaCalculator /></span>
-                <span className="hero-symbol symbol-two"><FaFlask /></span>
-                <span className="hero-symbol symbol-three"><FaPencilAlt /></span>
-                <span className="hero-symbol symbol-four"><FaAtom /></span>
-                <div className="hero-book-art">
-                  <FaBookOpen className="book-icon" />
-                  <FaLightbulb className="bulb-icon" />
-                  <span className="formula formula-one">x² + y²</span>
-                  <span className="formula formula-two">E = mc²</span>
+            <div className="hero-portal-wrap">
+              <section className="hero-portal-card hero-intro-portal" aria-labelledby="hero-portal-title">
+                <div className="hero-portal-heading">
+                  <span className="hero-portal-icon"><FaUserGraduate /></span>
+                  <div><p>STUDENT PORTAL</p><h2 id="hero-portal-title">Welcome back</h2></div>
                 </div>
-              </div>
+                <form className="hero-portal-form" onSubmit={handleStudentLogin}>
+                  <label>
+                    <span>Academy</span>
+                    <select value={academyId} onChange={(event) => setAcademyId(event.target.value)} required disabled={academies.length === 0}>
+                      {academies.length === 0 ? <option value="">No active academy available</option> : academies.map((academy) => <option key={academy._id} value={academy._id}>{academy.academyName}</option>)}
+                    </select>
+                  </label>
+                  <label>
+                    <span>Student ID</span>
+                    <div className="hero-portal-input"><FaUser aria-hidden="true" /><input type="text" value={studentId} onChange={(event) => setStudentId(event.target.value)} placeholder="Enter your student ID" autoComplete="username" required /></div>
+                  </label>
+                  <label>
+                    <span>Password</span>
+                    <div className="hero-portal-input"><FaLock aria-hidden="true" /><input type="password" value={portalPassword} onChange={(event) => setPortalPassword(event.target.value)} placeholder="Enter your password" autoComplete="current-password" required /></div>
+                  </label>
+                  <button type="submit" className="primary-button full-width" disabled={portalLoading || academies.length === 0}>
+                    {portalLoading ? "Signing in..." : "STUDENT LOGIN"}
+                  </button>
+                </form>
+                <p className="hero-portal-enquiry">Not registered? <a href="#enquire">Enquire now</a></p>
+              </section>
             </div>
           </div>
         </div>
       </section>
 
       <section className="trust-strip">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="trust-grid">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-scroll-reveal>
+          <div className="trust-grid" data-scroll-stagger>
             {trustPoints.map((point) => (
               <div key={point.label} className="trust-item">
                 <strong>{point.value}</strong>
@@ -155,13 +242,13 @@ const Home = () => {
       </section>
 
       <section id="about" className="content-section">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-scroll-reveal>
           <div className="section-header center">
             <p className="eyebrow accent">Where learning becomes understanding</p>
             <h2>WHERE LEARNING BECOMES UNDERSTANDING</h2>
           </div>
 
-          <div className="about-grid">
+          <div className="about-grid" data-scroll-stagger>
             <div className="about-copy">
               <p>
                 At {PLATFORM_NAME}, learning is shaped around clarity, confidence, and steady academic growth.
@@ -175,7 +262,7 @@ const Home = () => {
               </p>
             </div>
 
-            <div className="feature-stack">
+            <div className="feature-stack" data-scroll-stagger>
               <div className="mini-card">
                 <strong>Concept clarity</strong>
                 <span>Clear explanations and strong fundamentals</span>
@@ -194,13 +281,13 @@ const Home = () => {
       </section>
 
       <section id="programs" className="content-section muted">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-scroll-reveal>
           <div className="section-header center">
             <p className="eyebrow accent">Learning pathways</p>
             <h2>OUR PROGRAMS</h2>
           </div>
 
-          {programs.length > 0 ? <div className="program-grid">
+          {programs.length > 0 ? <div className="program-grid" data-scroll-stagger>
             {programs.map((program) => (
               <article key={program._id} className="program-card">
                 {program.imageUrl && <img src={program.imageUrl} alt={program.name} className="home-program-image" />}
@@ -217,13 +304,13 @@ const Home = () => {
       </section>
 
       <section id="why-nga" className="content-section">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-scroll-reveal>
           <div className="section-header center">
             <p className="eyebrow accent">Why parents choose us</p>
             <h2>WHY CHOOSE NGA</h2>
           </div>
 
-          <div className="reasons-grid">
+          <div className="reasons-grid" data-scroll-stagger>
             {reasons.map((reason) => (
               <div key={reason.title} className="reason-card">
                 <div className="reason-icon">✓</div>
@@ -236,13 +323,13 @@ const Home = () => {
       </section>
 
       <section className="content-section muted">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-scroll-reveal>
           <div className="section-header center">
             <p className="eyebrow accent">Supporting every step</p>
             <h2>HOW WE HELP STUDENTS GROW</h2>
           </div>
 
-          <div className="steps-grid">
+          <div className="steps-grid" data-scroll-stagger>
             {steps.map((step) => (
               <div key={step.number} className="step-card">
                 <span className="step-number">{step.number}</span>
@@ -255,13 +342,13 @@ const Home = () => {
       </section>
 
       <section id="achievements" className="content-section">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-scroll-reveal>
           <div className="section-header center">
             <p className="eyebrow accent">Progress that matters</p>
             <h2>STUDENT ACHIEVEMENTS</h2>
           </div>
 
-          <div className="achievement-grid">
+          <div className="achievement-grid" data-scroll-stagger>
             {achievementCards.map((item) => (
               <div key={item.title} className="achievement-card">
                 <div className="star-mark">✦</div>
@@ -274,13 +361,13 @@ const Home = () => {
       </section>
 
       <section id="testimonials" className="content-section muted">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-scroll-reveal>
           <div className="section-header center">
             <p className="eyebrow accent">Parent and student voice</p>
             <h2>WHAT PARENTS &amp; STUDENTS SAY</h2>
           </div>
 
-          <div className="testimonial-grid">
+          <div className="testimonial-grid" data-scroll-stagger>
             {testimonialCards.map((item) => (
               <blockquote key={item.label} className="testimonial-card">
                 <p>“{item.quote}”</p>
@@ -292,13 +379,13 @@ const Home = () => {
       </section>
 
       <section id="campus" className="content-section campus-section">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-scroll-reveal>
           <div className="section-header center">
             <p className="eyebrow accent">Our campus</p>
             <h2>VISIT OUR LOCATION</h2>
             <p>Find Next GenLearning Academy in Kompally and get directions to our learning space.</p>
           </div>
-          <div className="location-panel">
+          <div className="location-panel" data-scroll-stagger>
             <div className="location-map-wrap">
               <iframe
                 title="Next GenLearning Academy location in Kompally"
@@ -318,8 +405,8 @@ const Home = () => {
       </section>
 
       <section className="admission-band">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="admission-content">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-scroll-reveal>
+          <div className="admission-content" data-scroll-stagger>
             <div>
               <p className="eyebrow accent">Admission support</p>
               <h2>READY TO HELP YOUR CHILD LEARN BETTER?</h2>
@@ -334,8 +421,8 @@ const Home = () => {
       </section>
 
       <section id="enquire" className="content-section contact-section">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="contact-grid">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-scroll-reveal>
+          <div className="contact-grid" data-scroll-stagger>
             <div className="contact-details">
               <p className="eyebrow accent">Get in touch</p>
               <h2>CONTACT</h2>
@@ -374,7 +461,15 @@ const Home = () => {
                 </label>
                 <label>
                   <span>Preferred Program</span>
-                  <input type="text" name="preferredProgram" value={form.preferredProgram} onChange={handleChange} placeholder="Preferred Program" />
+                  <select name="preferredProgram" value={form.preferredProgram} onChange={handleChange}>
+                    <option value="">Select a preferred program</option>
+                    {programs.map((program) => {
+                      const programLabel = program.name;
+                      return <option key={program._id} value={programLabel}>{programLabel}</option>;
+                    })}
+                    {programsLoading && <option value="" disabled>Loading programs...</option>}
+                    {!programsLoading && programs.length === 0 && <option value="" disabled>No programs available</option>}
+                  </select>
                 </label>
                 <label className="full-width">
                   <span>Message</span>

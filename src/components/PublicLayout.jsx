@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, NavLink } from "react-router-dom";
 import { FaBars, FaTimes, FaUserCircle } from "react-icons/fa";
 import { PLATFORM_NAME, PLATFORM_TAGLINE } from "../config/branding";
 import ngaLogo from "../assets/nga-logo.png.jpeg";
@@ -8,25 +8,38 @@ export const LogoMark = ({ className = "" }) => (
   <img src={ngaLogo} className={className} alt="Next GenLearning Academy logo" />
 );
 
-const PublicLayout = ({ children }) => {
+const PublicLayout = ({ children, homepage = false }) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [headerScrolled, setHeaderScrolled] = useState(false);
+
+  useEffect(() => {
+    const updateHeaderScroll = () => {
+      const nextScrolled = window.scrollY > 24;
+      setHeaderScrolled((current) => current === nextScrolled ? current : nextScrolled);
+    };
+
+    updateHeaderScroll();
+    window.addEventListener("scroll", updateHeaderScroll, { passive: true });
+    return () => window.removeEventListener("scroll", updateHeaderScroll);
+  }, []);
 
   const navLinks = [
     { label: "Home", href: "/" },
     { label: "Our Story", href: "/about" },
     { label: "Programs", href: "/programs" },
+    { label: "Results", href: "/results" },
     { label: "Digital Hub", href: "/digital-hub" },
     { label: "Portal", href: "/academy-login", icon: <FaUserCircle /> },
   ];
 
   return (
-    <div className="page-shell">
-      <header className="site-header">
+    <div className={homepage ? "page-shell home-page-shell" : "page-shell"} data-homepage={homepage ? "true" : undefined}>
+      <header className={headerScrolled ? "site-header is-scrolled" : "site-header"}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="header-inner">
-            <Link to="/" className="brand-wrap" aria-label="Go to homepage">
-              <LogoMark className="logo-mark" />
-              <div>
+            <Link to="/" className="brand-wrap header-brand" aria-label="Go to homepage">
+              <span className="brand-logo-frame"><LogoMark className="logo-mark" /></span>
+              <div className="brand-copy">
                 <p className="brand-name">{PLATFORM_NAME}</p>
                 <p className="brand-tagline">{PLATFORM_TAGLINE}</p>
               </div>
@@ -34,9 +47,9 @@ const PublicLayout = ({ children }) => {
 
             <nav className="main-nav" aria-label="Main navigation">
               {navLinks.map((link) => (
-                <a key={link.label} href={link.href} className="nav-link" onClick={() => setMenuOpen(false)}>
+                <NavLink key={link.label} to={link.href} end={link.href === "/"} className={({ isActive }) => isActive ? "nav-link active" : "nav-link"} onClick={() => setMenuOpen(false)}>
                   {link.icon}{link.label}
-                </a>
+                </NavLink>
               ))}
             </nav>
 
@@ -60,9 +73,9 @@ const PublicLayout = ({ children }) => {
         {menuOpen && (
           <div className="mobile-menu">
             {navLinks.map((link) => (
-              <a key={link.label} href={link.href} className="mobile-link" onClick={() => setMenuOpen(false)}>
+              <NavLink key={link.label} to={link.href} end={link.href === "/"} className={({ isActive }) => isActive ? "mobile-link active" : "mobile-link"} onClick={() => setMenuOpen(false)}>
                 {link.icon}{link.label}
-              </a>
+              </NavLink>
             ))}
             <a href="#enquire" className="primary-button full-width" onClick={() => setMenuOpen(false)}>
               Enquiry Now
