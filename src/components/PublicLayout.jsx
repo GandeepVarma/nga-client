@@ -38,7 +38,9 @@ const PublicLayout = ({ children, homepage = false }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="header-inner">
             <Link to="/" className="brand-wrap header-brand" aria-label="Go to homepage">
-              <span className="brand-logo-frame"><LogoMark className="logo-mark" /></span>
+              <span className="brand-logo-frame">
+                <span className="brand-logo-clip"><LogoMark className="logo-mark" /></span>
+              </span>
               <div className="brand-copy">
                 <p className="brand-name">{PLATFORM_NAME}</p>
                 <p className="brand-tagline">{PLATFORM_TAGLINE}</p>

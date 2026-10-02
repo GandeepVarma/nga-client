@@ -109,6 +109,22 @@ img, svg {
   background: linear-gradient(180deg, #f7faff 0%, #ffffff 15%, #f5f7ff 100%);
 }
 
+.route-page-shell {
+  display: block;
+  animation: route-page-enter 0.28s ease-out both;
+}
+
+@keyframes route-page-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 .max-w-7xl {
   max-width: 1280px;
 }
@@ -936,6 +952,18 @@ img, svg {
     grid-template-columns: 1.1fr 1fr;
     align-items: center;
     gap: 2rem;
+    animation: portal-shell-enter 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  @keyframes portal-shell-enter {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 10px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
   }
 
   .portal-brand-row {
@@ -953,6 +981,18 @@ img, svg {
     border-radius: 1.5rem;
     box-shadow: 0 26px 45px rgba(15, 31, 61, 0.08);
     padding: 1.1rem 1.4rem;
+    animation: portal-brand-enter 0.58s 0.12s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  @keyframes portal-brand-enter {
+    from {
+      opacity: 0;
+      transform: translate3d(-10px, 0, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
   }
 
   .portal-logo {
@@ -987,6 +1027,18 @@ img, svg {
     border-radius: 2rem;
     box-shadow: 0 32px 60px rgba(15, 31, 61, 0.12);
     padding: 2rem 1.6rem 1.6rem;
+    animation: portal-card-enter 0.65s 0.2s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  @keyframes portal-card-enter {
+    from {
+      opacity: 0;
+      transform: translate3d(12px, 0, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
   }
 
   .portal-header-block {
@@ -1020,6 +1072,18 @@ img, svg {
     border-radius: 1rem;
     padding: 0.35rem;
     margin-bottom: 1.25rem;
+    animation: portal-panel-enter 0.52s 0.24s ease-out both;
+  }
+
+  @keyframes portal-panel-enter {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 8px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
   }
 
   .portal-tab {
@@ -1054,6 +1118,7 @@ img, svg {
     display: flex;
     flex-direction: column;
     gap: 0.55rem;
+    animation: portal-panel-enter 0.52s 0.28s ease-out both;
   }
 
   .field-label {
@@ -1123,6 +1188,7 @@ img, svg {
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     box-shadow: 0 14px 24px rgba(212, 163, 45, 0.26);
+    animation: portal-panel-enter 0.52s 0.34s ease-out both;
   }
 
   .portal-submit-button:hover {
@@ -1585,7 +1651,17 @@ body {
 }
 @media (prefers-reduced-motion: reduce) {
   .program-tab,
-  .program-tab.active { animation: none; transition: none; }
+  .program-tab.active,
+  .route-page-shell,
+  .portal-login-shell,
+  .portal-brand,
+  .portal-login-card,
+  .portal-mode-tabs,
+  .field-block,
+  .portal-submit-button {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 .results-page-section { background: #09142b; }
 .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 1.25rem; }
@@ -2555,7 +2631,16 @@ body,
   display: block;
   animation: academy-logo-enter 0.68s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
-.site-header .brand-logo-frame::after {
+.site-header .brand-logo-clip {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+  line-height: 0;
+}
+.site-header .brand-logo-clip::after {
   position: absolute;
   top: -20%;
   bottom: -20%;
@@ -2611,11 +2696,46 @@ body,
     filter: none !important;
   }
   .site-header.is-scrolled .header-inner { transform: none !important; }
-  .site-header .brand-logo-frame::after { display: none; animation: none !important; }
+  .site-header .brand-logo-clip::after { display: none; animation: none !important; }
 }
 
 .home-page-shell .site-header {
   animation: home-header-enter 0.72s ease-out both;
+}
+
+.home-page-shell .brand-logo-frame {
+  position: relative;
+  overflow: visible;
+}
+
+.home-page-shell .brand-logo-frame::before {
+  content: "";
+  position: absolute;
+  inset: -8% -8%;
+  border-radius: 0.4rem;
+  background: rgba(242, 197, 48, 0.18);
+  filter: blur(10px);
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.28s ease, transform 0.28s ease;
+  pointer-events: none;
+}
+
+.home-page-shell .header-brand:hover .brand-logo-frame::before,
+.home-page-shell .header-brand:focus-visible .brand-logo-frame::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.home-page-shell .header-brand .logo-mark {
+  will-change: transform, opacity, filter;
+  transition: transform 0.24s ease, filter 0.24s ease, opacity 0.24s ease;
+}
+
+.home-page-shell .header-brand:hover .logo-mark,
+.home-page-shell .header-brand:focus-visible .logo-mark {
+  transform: scale(1.03);
+  filter: drop-shadow(0 0 10px rgba(242, 197, 48, 0.22));
 }
 
 .home-page-shell .nav-link::after { transform-origin: center; transition: transform 0.24s ease; }
@@ -2625,16 +2745,106 @@ body,
 .home-page-shell .header-actions .primary-button { transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease; }
 .home-page-shell .header-actions .primary-button:hover { transform: translateY(-2px); }
 
-.home-page-shell .hero-intro-badge { animation: home-rise-in 0.68s 0.1s ease-out both; }
+.home-page-shell .hero-intro-badge {
+  position: relative;
+  overflow: hidden;
+  animation: home-rise-in 0.68s 0.1s ease-out both;
+}
+
+.home-page-shell .hero-intro-badge::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(242, 197, 48, 0.12), transparent);
+  transform: translateX(-120%);
+  animation: hero-badge-glow 2.8s ease-in-out 0.9s 1;
+}
+
 .home-page-shell .hero-intro-eyebrow { animation: home-rise-in 0.68s 0.18s ease-out both; }
 .home-page-shell .hero-title-first { display: inline-block; animation: home-slide-in 0.76s 0.24s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
-.home-page-shell .hero-title-second { display: inline-block; animation: home-slide-in 0.76s 0.38s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.home-page-shell .hero-title-second {
+  display: inline-block;
+  position: relative;
+  animation: home-slide-in 0.76s 0.38s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.home-page-shell .hero-title-second::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.06em;
+  height: 0.12em;
+  background: rgba(242, 197, 48, 0.18);
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: hero-word-highlight 0.7s 0.7s ease-out forwards;
+}
+
 .home-page-shell .hero-intro-tagline { animation: home-rise-in 0.68s 0.48s ease-out both; }
 .home-page-shell .hero-intro-description { animation: home-rise-in 0.68s 0.54s ease-out both; }
 .home-page-shell .hero-intro-actions > * { animation: home-rise-in 0.68s 0.62s ease-out both; }
 .home-page-shell .hero-intro-actions > :nth-child(2) { animation-delay: 0.72s; }
 .home-page-shell .hero-intro-portal { animation: home-portal-enter 0.82s 0.32s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 .home-page-shell .hero-pattern { animation: home-background-drift 36s ease-in-out infinite alternate; }
+
+.home-page-shell .steps-grid {
+  position: relative;
+}
+
+.home-page-shell .steps-grid::before {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 3.3rem;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(242, 197, 48, 0.08), rgba(242, 197, 48, 0.8), rgba(242, 197, 48, 0.08));
+  opacity: 0;
+  transform: scaleX(0.75);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.home-page-shell .steps-grid.is-revealed::before {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.home-page-shell .step-card,
+.home-page-shell .program-card,
+.home-page-shell .achievement-card,
+.home-page-shell .testimonial-card,
+.home-page-shell .reason-card,
+.home-page-shell .mini-card,
+.home-page-shell .location-panel,
+.home-page-shell .contact-card,
+.home-page-shell .home-program-empty {
+  will-change: transform, box-shadow, opacity;
+}
+
+.home-page-shell .step-card:hover .step-number,
+.home-page-shell .program-card:hover .program-badge,
+.home-page-shell .achievement-card:hover .star-mark {
+  transform: translateY(-2px);
+}
+
+.home-page-shell .step-card:hover .step-number,
+.home-page-shell .achievement-card:hover .star-mark {
+  transition: transform 0.22s ease;
+}
+
+.home-page-shell .program-card:hover .home-program-image {
+  transform: scale(1.02);
+}
+
+.home-page-shell .trust-item strong {
+  display: inline-block;
+  transform-origin: center bottom;
+}
+
+.home-page-shell [data-scroll-stagger].is-revealed .trust-item strong {
+  animation: trust-value-bloom 0.56s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
 
 .home-page-shell .hero-portal-card {
   transition: transform 0.28s ease, box-shadow 0.28s ease;
@@ -2731,6 +2941,20 @@ body,
   from { opacity: 0; transform: translate3d(-24px, 0, 0); }
   to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
+@keyframes hero-word-highlight {
+  0% { transform: scaleX(0); opacity: 0; }
+  25% { opacity: 1; }
+  100% { transform: scaleX(1); opacity: 1; }
+}
+@keyframes hero-badge-glow {
+  0% { transform: translateX(-120%); }
+  40% { transform: translateX(130%); }
+  100% { transform: translateX(130%); }
+}
+@keyframes trust-value-bloom {
+  0% { opacity: 0; transform: translate3d(0, 8px, 0) scale(0.96); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
 @keyframes home-portal-enter {
   from { opacity: 0; transform: translate3d(22px, 0, 0); }
   to { opacity: 1; transform: translate3d(0, 0, 0); }
@@ -2787,7 +3011,12 @@ body,
   .home-page-shell .hero-intro-description,
   .home-page-shell .hero-intro-actions > *,
   .home-page-shell .hero-intro-portal,
-  .home-page-shell .hero-pattern {
+  .home-page-shell .hero-pattern,
+  .home-page-shell .brand-logo-frame::before,
+  .home-page-shell .hero-intro-badge::after,
+  .home-page-shell .hero-title-second::after,
+  .home-page-shell .steps-grid::before,
+  .home-page-shell [data-scroll-stagger].is-revealed .trust-item strong {
     animation: none !important;
   }
   .home-page-shell[data-motion-ready="true"] [data-scroll-reveal],
