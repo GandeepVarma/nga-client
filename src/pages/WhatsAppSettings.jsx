@@ -51,13 +51,28 @@ const WhatsAppSettings = () => {
   };
 
   const toggleNotification = async (key) => {
+    const enabled = !settings.notificationsEnabled[key];
     try {
       await api.put("/whatsapp/settings", {
-        notificationsEnabled: { [key]: !settings.notificationsEnabled[key] },
+        notificationsEnabled: { [key]: enabled },
       });
-      fetchSettings();
+      setSettings((current) => ({
+        ...current,
+        notificationsEnabled: { ...current.notificationsEnabled, [key]: enabled },
+      }));
     } catch {
       toast.error("Failed to update");
+    }
+  };
+
+  const toggleAutoNotifications = async () => {
+    const enabled = !settings.autoNotificationsEnabled;
+    try {
+      await api.put("/whatsapp/settings", { autoNotificationsEnabled: enabled });
+      setSettings((current) => ({ ...current, autoNotificationsEnabled: enabled }));
+      toast.success(enabled ? "Automatic WhatsApp alerts enabled" : "Automatic WhatsApp alerts stopped");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update automatic alerts");
     }
   };
 
@@ -91,8 +106,8 @@ const WhatsAppSettings = () => {
           <FaWhatsapp />
         </div>
         <div className="flex-1">
-          <p className="font-display font-semibold text-navy dark:text-white">Connection Status</p>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="font-display font-semibold text-slate-900">Connection Status</p>
+          <p className="text-sm text-slate-700">
             {settings.lastTestedAt ? `Last tested: ${new Date(settings.lastTestedAt).toLocaleString()}` : "Never tested yet"}
           </p>
         </div>
@@ -105,7 +120,7 @@ const WhatsAppSettings = () => {
 
       <div className="card mb-6">
         <h3 className="font-display font-semibold text-navy dark:text-white mb-4">Meta WhatsApp Cloud API Credentials</h3>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+        <p className="text-sm text-slate-700 mb-4">
           Get these from your app in{" "}
           <a href="https://developers.facebook.com/apps" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">
             Meta for Developers
@@ -151,6 +166,21 @@ const WhatsAppSettings = () => {
       </div>
 
       <div className="card">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4">
+          <div>
+            <h3 className="font-display font-semibold text-navy dark:text-white">Automatic WhatsApp Alerts</h3>
+            <p className="mt-1 text-sm text-slate-700">Turn scheduled and event-triggered alerts on or off. Manual reminders and broadcasts remain available.</p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={settings.autoNotificationsEnabled}
+            onClick={toggleAutoNotifications}
+            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${settings.autoNotificationsEnabled ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-800"}`}
+          >
+            {settings.autoNotificationsEnabled ? "Automatic alerts: On" : "Automatic alerts: Off"}
+          </button>
+        </div>
         <h3 className="font-display font-semibold text-navy dark:text-white mb-4">Notification Types</h3>
         <div className="space-y-3">
           {Object.entries({
@@ -161,7 +191,7 @@ const WhatsAppSettings = () => {
             homeworkReminder: "Homework Reminders",
           }).map(([key, label]) => (
             <label key={key} className="flex items-center justify-between py-2 border-b border-slate-50 dark:border-navy-lighter/50 last:border-0">
-              <span className="text-sm text-navy dark:text-white">{label}</span>
+              <span className="text-sm text-slate-800">{label}</span>
               <input type="checkbox" checked={settings.notificationsEnabled[key]} onChange={() => toggleNotification(key)} />
             </label>
           ))}

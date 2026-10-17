@@ -2992,6 +2992,11 @@ body,
   from { opacity: 0; transform: translate3d(0, 10px, 0); }
   to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
+
+html:not(.dark) .page-shell :is(.text-slate-400, .text-slate-500):not(.site-header *):not(.site-footer *),
+html:not(.dark) .admin-main :is(.text-slate-400, .text-slate-500) {
+  color: #475569 !important;
+}
 @keyframes home-slide-in-mobile {
   from { opacity: 0; transform: translate3d(-12px, 0, 0); }
   to { opacity: 1; transform: translate3d(0, 0, 0); }

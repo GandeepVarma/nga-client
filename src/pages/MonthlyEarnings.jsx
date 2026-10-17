@@ -49,7 +49,7 @@ const MonthlyEarnings = () => {
 
       <div className="card">
         <h2 className="font-display font-semibold text-navy dark:text-white mb-2">How this is calculated</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <p className="text-sm font-medium text-slate-700">
           Expected monthly earnings are the sum of the monthly fees set on all active student records. Inactive students are excluded. This is expected fees, not payments collected.
         </p>
       </div>

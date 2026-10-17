@@ -1,15 +1,32 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
-import { FaMoneyBillWave, FaPlus, FaRupeeSign, FaTrash, FaUndo } from "react-icons/fa";
+import { FaDownload, FaMoneyBillWave, FaPlus, FaRupeeSign, FaTrash, FaUndo } from "react-icons/fa";
 import DashboardLayout from "../components/DashboardLayout";
 import StatCard from "../components/StatCard";
 import api from "../api/axios";
+import { PLATFORM_NAME } from "../config/branding";
+import { useAuth } from "../context/AuthContext";
+import ngaLogo from "../assets/nga-logo.png.jpeg";
 
 const currentMonthStr = () => {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 };
+
+const normalizeWhatsAppNumber = (value) => {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (digits.length === 10) return `91${digits}`;
+  return digits.length >= 11 && digits.length <= 15 ? digits : null;
+};
+
+const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+}[character]));
 
 const FeeManagement = () => {
   const [fees, setFees] = useState([]);
@@ -20,12 +37,12 @@ const FeeManagement = () => {
   const [generateMonth, setGenerateMonth] = useState(currentMonthStr());
   const [generateDueDate, setGenerateDueDate] = useState("");
   const [generating, setGenerating] = useState(false);
-  const [remindingId, setRemindingId] = useState(null);
   const [payModal, setPayModal] = useState(null);
   const [payAmount, setPayAmount] = useState("");
   const [payMode, setPayMode] = useState("Cash");
   const [paying, setPaying] = useState(false);
   const [feeActionId, setFeeActionId] = useState(null);
+  const { user } = useAuth();
 
   const fetchFees = useCallback(async () => {
     setLoading(true);
@@ -64,16 +81,102 @@ const FeeManagement = () => {
     }
   };
 
-  const handleSendReminder = async (feeId) => {
-    setRemindingId(feeId);
-    try {
-      const res = await api.post(`/fees/${feeId}/remind`);
-      toast[res.data.success ? "success" : "error"](res.data.success ? "WhatsApp reminder sent" : "Reminder failed to send");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to send reminder");
-    } finally {
-      setRemindingId(null);
+  const handleSendReminder = (fee) => {
+    const phoneNumber = normalizeWhatsAppNumber(fee.student?.parentWhatsapp || fee.student?.phone);
+    if (!phoneNumber) {
+      toast.error("A valid parent WhatsApp number is required to send a reminder");
+      return;
     }
+
+    const message = [
+      `Hello ${fee.student.parentName || "Parent"},`,
+      "",
+      `This is a fee reminder from ${PLATFORM_NAME}.`,
+      "",
+      `Student: ${fee.student.name}`,
+      `Class: ${fee.student.class}`,
+      `Month: ${fee.month}`,
+      `Pending Fee: ₹${fee.pending}`,
+      `Due Date: ${fee.dueDate ? new Date(fee.dueDate).toLocaleDateString("en-IN") : "N/A"}`,
+      "",
+      "Please make the payment at your earliest convenience.",
+    ].join("\n");
+
+    window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+    toast.success("WhatsApp opened. Review the reminder and press Send.");
+  };
+
+  const handleGenerateReceipt = (fee) => {
+    if (!fee.student) {
+      toast.error("Cannot generate a receipt because this fee has no linked student");
+      return;
+    }
+
+    const receiptWindow = window.open("", "_blank", "width=800,height=900");
+    if (!receiptWindow) {
+      toast.error("Allow pop-ups to generate the receipt");
+      return;
+    }
+
+    const academyName = user?.academyName || user?.academy?.academyName || PLATFORM_NAME;
+    const receiptDate = fee.paymentDate ? new Date(fee.paymentDate).toLocaleDateString("en-IN") : new Date().toLocaleDateString("en-IN");
+    const logoUrl = new URL(ngaLogo, window.location.href).href;
+    const rows = [
+      ["Receipt Number", fee.receiptNumber || "—"],
+      ["Payment Date", receiptDate],
+      ["Student Name", fee.student.name],
+      ["Parent Name", fee.student.parentName || "—"],
+      ["Phone Number", fee.student.phone || "—"],
+      ["Fee Month", fee.month],
+      ["Payment Mode", fee.modeOfPayment || "—"],
+    ];
+
+    receiptWindow.document.write(`<!doctype html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <title>Fee Receipt - ${escapeHtml(fee.receiptNumber || fee.month)}</title>
+          <style>
+            * { box-sizing: border-box; }
+            body { margin: 0; padding: 40px 20px; color: #172033; background: #f1f5f9; font-family: Arial, sans-serif; }
+            .receipt { max-width: 680px; margin: 0 auto; padding: 36px; background: #fff; border: 1px solid #d5e1ed; border-radius: 16px; }
+            .brand { display: flex; align-items: center; gap: 16px; padding-bottom: 22px; border-bottom: 3px solid #f2a900; }
+            .brand img { width: 72px; height: 72px; object-fit: contain; }
+            .brand h1 { margin: 0; color: #244a76; font-size: 22px; }
+            .brand p { margin: 6px 0 0; color: #475569; }
+            h2 { margin: 28px 0 18px; text-align: center; font-size: 20px; }
+            .details { width: 100%; border-collapse: collapse; }
+            .details td { padding: 12px 8px; border-bottom: 1px solid #e2e8f0; }
+            .details td:first-child { width: 42%; color: #475569; font-weight: 600; }
+            .amount { display: flex; justify-content: space-between; margin-top: 20px; padding: 16px; background: #eaf1f8; border-radius: 10px; font-size: 18px; font-weight: 700; }
+            .footer { margin-top: 48px; display: flex; justify-content: space-between; gap: 24px; align-items: end; }
+            .thanks { color: #475569; font-size: 13px; }
+            .admin { min-width: 170px; padding-top: 10px; border-top: 1px solid #64748b; text-align: center; }
+            .print { display: block; margin: 24px auto 0; padding: 10px 18px; border: 0; border-radius: 8px; background: #244a76; color: white; font-weight: 700; cursor: pointer; }
+            @media print { body { padding: 0; background: #fff; } .receipt { border: 0; border-radius: 0; } .print { display: none; } }
+          </style>
+        </head>
+        <body>
+          <main class="receipt">
+            <header class="brand">
+              <img src="${escapeHtml(logoUrl)}" alt="Academy logo" />
+              <div><h1>${escapeHtml(academyName)}</h1><p>Official Fee Receipt</p></div>
+            </header>
+            <h2>Payment Receipt</h2>
+            <table class="details"><tbody>
+              ${rows.map(([label, value]) => `<tr><td>${escapeHtml(label)}</td><td>${escapeHtml(value)}</td></tr>`).join("")}
+            </tbody></table>
+            <div class="amount"><span>Amount Paid</span><span>₹${escapeHtml(Number(fee.paid).toLocaleString("en-IN"))}</span></div>
+            <footer class="footer">
+              <p class="thanks">Thank you for your payment.</p>
+              <div class="admin">${escapeHtml(user?.name || "Admin")}<br /><small>Authorized by</small></div>
+            </footer>
+            <button class="print" onclick="window.print()">Download / Print Receipt</button>
+          </main>
+        </body>
+      </html>`);
+    receiptWindow.document.close();
   };
 
   const openPayModal = (fee) => {
@@ -186,15 +289,20 @@ const FeeManagement = () => {
                   <td className="py-3 px-4 text-right">
                     <div className="flex justify-end gap-2">
                       {f.status !== "Paid" && f.student && (
-                        <button onClick={() => handleSendReminder(f._id)} disabled={remindingId === f._id} className="btn-outline text-xs py-1.5 px-3">
-                          {remindingId === f._id ? "Sending..." : "Remind"}
+                        <button onClick={() => handleSendReminder(f)} className="btn-outline text-xs py-1.5 px-3">
+                          Remind
                         </button>
                       )}
                       {f.status !== "Paid" && f.student ? <button onClick={() => openPayModal(f)} className="btn-outline text-xs py-1.5 px-3">Record Payment</button> : f.status === "Paid" ? <span className="text-slate-400 text-xs">Fully paid</span> : null}
                       {f.paid > 0 && (
-                        <button onClick={() => handleUndoPayment(f)} disabled={feeActionId === f._id} className="btn-outline text-xs py-1.5 px-3" title="Undo all payment amounts recorded for this fee">
-                          <FaUndo className="inline mr-1" /> {feeActionId === f._id ? "Undoing..." : "Undo Payment"}
-                        </button>
+                        <>
+                          <button onClick={() => handleGenerateReceipt(f)} className="btn-outline text-xs py-1.5 px-3">
+                            <FaDownload className="inline mr-1" /> Generate Receipt
+                          </button>
+                          <button onClick={() => handleUndoPayment(f)} disabled={feeActionId === f._id} className="btn-outline text-xs py-1.5 px-3" title="Undo all payment amounts recorded for this fee">
+                            <FaUndo className="inline mr-1" /> {feeActionId === f._id ? "Undoing..." : "Undo Payment"}
+                          </button>
+                        </>
                       )}
                       <button onClick={() => handleDeleteFee(f)} disabled={feeActionId === f._id} className="btn-outline text-xs py-1.5 px-3 text-red-600" title="Delete this fee record">
                         <FaTrash className="inline mr-1" /> Delete Fee
