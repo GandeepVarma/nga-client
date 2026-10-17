@@ -1,5 +1,5 @@
-import React from "react";
-import { NavLink } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import {
   FaGraduationCap,
   FaThLarge,
@@ -19,6 +19,7 @@ import {
   FaPlusCircle,
   FaQuestionCircle,
   FaKey,
+  FaChevronDown,
 } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 import { PLATFORM_NAME, PLATFORM_TAGLINE } from "../config/branding";
@@ -28,24 +29,28 @@ import ngaLogo from "../assets/nga-logo.png.jpeg";
 // Admin: full academy control, including teacher management and finances.
 const adminLinks = [
   { to: "/admin/dashboard", label: "Dashboard", icon: FaThLarge, feature: "dashboard" },
-  { to: "/admin/teachers", label: "Teachers", icon: FaUserTie, feature: "students" },
-  { to: "/admin/assign-students", label: "Assign Students", icon: FaExchangeAlt, feature: "students" },
   { to: "/admin/students", label: "All Students", icon: FaUsers, feature: "students" },
+  { to: "/admin/assign-students", label: "Assign Students", icon: FaExchangeAlt, feature: "students" },
+  { to: "/admin/teachers", label: "Teachers", icon: FaUserTie, feature: "students" },
+  { to: "/admin/attendance", label: "Attendance", icon: FaCalendarCheck, feature: "attendance" },
   { to: "/admin/tests", label: "Tests", icon: FaClipboardList, feature: "tests" },
   { to: "/admin/online-tests", label: "Online MCQ Tests", icon: FaLaptopCode, feature: "tests" },
   { to: "/admin/question-bank", label: "Question Bank", icon: FaQuestionCircle, feature: "studyMaterials" },
   { to: "/admin/assignments", label: "Assignments", icon: FaBookOpen, feature: "assignments" },
   { to: "/admin/fees", label: "Fees", icon: FaMoneyBillWave, feature: "fees" },
-  { to: "/admin/programs", label: "Programs", icon: FaGraduationCap, feature: "dashboard" },
-  { to: "/admin/results", label: "Student Results", icon: FaChartLine, feature: "dashboard" },
-  { to: "/admin/story", label: "Our Story", icon: FaBookOpen, feature: "dashboard" },
-  { to: "/admin/digital-hub", label: "Digital Hub", icon: FaLaptopCode, feature: "dashboard" },
-  { to: "/admin/attendance", label: "Attendance", icon: FaCalendarCheck, feature: "attendance" },
+  { to: "/admin/earnings", label: "Monthly Earnings", icon: FaMoneyBillWave, feature: "fees" },
   { to: "/admin/teacher-performance", label: "Teacher Performance", icon: FaChartLine, feature: "analytics" },
   { to: "/admin/whatsapp/broadcast", label: "Broadcast", icon: FaWhatsapp, feature: "whatsappReminders" },
   { to: "/admin/whatsapp/logs", label: "WhatsApp Logs", icon: FaHistory, feature: "whatsappReminders" },
   { to: "/admin/whatsapp/settings", label: "WhatsApp Settings", icon: FaCog, feature: "whatsappReminders" },
   { to: "/account/password", label: "Change Password", icon: FaKey, feature: "dashboard" },
+];
+
+const adminChangeLinks = [
+  { to: "/admin/programs", label: "Programs", icon: FaGraduationCap, feature: "dashboard" },
+  { to: "/admin/results", label: "Student Results", icon: FaChartLine, feature: "dashboard" },
+  { to: "/admin/story", label: "Our Story", icon: FaBookOpen, feature: "dashboard" },
+  { to: "/admin/digital-hub", label: "Digital Hub", icon: FaLaptopCode, feature: "dashboard" },
 ];
 
 // Teacher: scoped strictly to their own assigned students. No fees, ever.
@@ -81,7 +86,10 @@ const superAdminLinks = [
 
 const Sidebar = ({ open, onClose }) => {
   const { role, user } = useAuth();
+  const { pathname } = useLocation();
+  const [changesOpen, setChangesOpen] = useState(() => adminChangeLinks.some((item) => item.to === pathname));
   let links = role === "super_admin" ? superAdminLinks : role === "admin" ? adminLinks : role === "teacher" ? teacherLinks : studentLinks;
+  const changeLinks = role === "admin" ? adminChangeLinks : [];
 
   if (role !== "super_admin" && user?.academy?.features) {
     links = links.filter((item) => {
@@ -90,13 +98,18 @@ const Sidebar = ({ open, onClose }) => {
       return hasFeature(featureName, user);
     });
   }
+  const visibleChangeLinks = changeLinks.filter((item) => hasFeature(item.feature, user));
+
+  useEffect(() => {
+    if (role === "admin" && adminChangeLinks.some((item) => item.to === pathname)) setChangesOpen(true);
+  }, [pathname, role]);
 
   return (
     <>
       {open && <div className="fixed inset-0 bg-black/40 z-30 lg:hidden" onClick={onClose} />}
 
       <aside
-        className={`admin-sidebar fixed lg:static z-40 top-0 left-0 h-full w-64 bg-navy flex flex-col p-5 transition-transform duration-300 overflow-y-auto ${
+        className={`admin-sidebar fixed lg:sticky z-40 top-0 left-0 h-full lg:h-screen w-64 shrink-0 bg-navy flex flex-col p-5 transition-transform duration-300 overflow-y-auto ${
           open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
@@ -110,14 +123,46 @@ const Sidebar = ({ open, onClose }) => {
 
         <nav className="flex-1 space-y-1">
           {links.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              onClick={onClose}
-              className={({ isActive }) => `sidebar-link ${isActive ? "active" : ""}`}
-            >
-              <Icon /> {label}
-            </NavLink>
+            <React.Fragment key={to}>
+              {to === "/admin/fees" && visibleChangeLinks.length > 0 && (
+                <div
+                  onMouseEnter={() => setChangesOpen(true)}
+                  onMouseLeave={() => setChangesOpen(false)}
+                >
+                  <button
+                    type="button"
+                    className={`sidebar-link w-full justify-between ${visibleChangeLinks.some((item) => item.to === pathname) ? "active" : ""}`}
+                    aria-expanded={changesOpen}
+                    aria-controls="admin-make-changes-menu"
+                    onClick={() => setChangesOpen((current) => !current)}
+                  >
+                    <span className="flex items-center gap-3"><FaCog /> Make Changes</span>
+                    <FaChevronDown className={`text-xs transition-transform ${changesOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  {changesOpen && (
+                    <div id="admin-make-changes-menu" className="mt-1 space-y-1">
+                      {visibleChangeLinks.map(({ to: changeTo, label: changeLabel, icon: ChangeIcon }) => (
+                        <NavLink
+                          key={changeTo}
+                          to={changeTo}
+                          onClick={onClose}
+                          className={({ isActive }) => `sidebar-link pl-8 text-sm ${isActive ? "active" : ""}`}
+                        >
+                          <ChangeIcon /> {changeLabel}
+                        </NavLink>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              <NavLink
+                to={to}
+                onClick={onClose}
+                className={({ isActive }) => `sidebar-link ${isActive ? "active" : ""}`}
+              >
+                <Icon /> {label}
+              </NavLink>
+            </React.Fragment>
           ))}
         </nav>
 

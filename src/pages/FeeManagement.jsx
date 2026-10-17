@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
-import { FaMoneyBillWave, FaPlus, FaRupeeSign } from "react-icons/fa";
+import { FaMoneyBillWave, FaPlus, FaRupeeSign, FaTrash, FaUndo } from "react-icons/fa";
 import DashboardLayout from "../components/DashboardLayout";
 import StatCard from "../components/StatCard";
 import api from "../api/axios";
@@ -24,6 +25,7 @@ const FeeManagement = () => {
   const [payAmount, setPayAmount] = useState("");
   const [payMode, setPayMode] = useState("Cash");
   const [paying, setPaying] = useState(false);
+  const [feeActionId, setFeeActionId] = useState(null);
 
   const fetchFees = useCallback(async () => {
     setLoading(true);
@@ -96,12 +98,45 @@ const FeeManagement = () => {
     }
   };
 
+  const handleUndoPayment = async (fee) => {
+    const studentName = fee.student?.name || "this deleted student";
+    if (!window.confirm(`Undo all payments recorded for ${studentName} for ${fee.month}?`)) return;
+
+    setFeeActionId(fee._id);
+    try {
+      await api.put(`/fees/${fee._id}/undo-payment`);
+      toast.success("Payment undone");
+      await Promise.all([fetchFees(), fetchSummary()]);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to undo payment");
+    } finally {
+      setFeeActionId(null);
+    }
+  };
+
+  const handleDeleteFee = async (fee) => {
+    const studentName = fee.student?.name || "Deleted student";
+    if (!window.confirm(`Delete the ${fee.month} fee record for ${studentName}? This cannot be undone.`)) return;
+
+    setFeeActionId(fee._id);
+    try {
+      await api.delete(`/fees/${fee._id}`);
+      toast.success("Fee record deleted");
+      await Promise.all([fetchFees(), fetchSummary()]);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to delete fee record");
+    } finally {
+      setFeeActionId(null);
+    }
+  };
+
   return (
     <DashboardLayout title="Fee Management">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
         <StatCard icon={FaMoneyBillWave} label="Total Collection" value={`₹${(summary?.totalCollection ?? 0).toLocaleString("en-IN")}`} accent="bg-emerald-500/15 text-emerald-500" />
         <StatCard icon={FaMoneyBillWave} label="Pending Collection" value={`₹${(summary?.pendingCollection ?? 0).toLocaleString("en-IN")}`} accent="bg-red-500/15 text-red-500" />
         <StatCard icon={FaMoneyBillWave} label="Today's Collection" value={`₹${(summary?.todaysCollection ?? 0).toLocaleString("en-IN")}`} accent="bg-gold/15 text-gold" />
+        <StatCard icon={FaMoneyBillWave} label="Monthly Collection" value={`₹${(summary?.monthlyCollection ?? 0).toLocaleString("en-IN")}`} accent="bg-blue-500/15 text-blue-500" />
       </div>
 
       <div className="card mb-6">
@@ -141,8 +176,8 @@ const FeeManagement = () => {
             ) : (
               fees.map((f) => (
                 <tr key={f._id} className="border-b border-slate-50 dark:border-navy-lighter/50">
-                  <td className="py-3 px-4 font-medium text-navy dark:text-white">{f.student?.name} <span className="text-slate-400 font-normal">({f.student?.studentId})</span></td>
-                  <td className="py-3 px-4">{f.student?.class}</td>
+                  <td className="py-3 px-4 font-medium text-navy dark:text-white">{f.student ? <>{f.student.name} <span className="text-slate-400 font-normal">({f.student.studentId})</span></> : <span className="text-red-500">Deleted student</span>}</td>
+                  <td className="py-3 px-4">{f.student?.class || "—"}</td>
                   <td className="py-3 px-4">{f.month}</td>
                   <td className="py-3 px-4">₹{f.amount + f.carryForward}</td>
                   <td className="py-3 px-4">₹{f.paid}</td>
@@ -150,12 +185,20 @@ const FeeManagement = () => {
                   <td className="py-3 px-4"><span className={`badge ${f.status === "Paid" ? "bg-emerald-100 text-emerald-700" : f.status === "Partial" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>{f.status}</span></td>
                   <td className="py-3 px-4 text-right">
                     <div className="flex justify-end gap-2">
-                      {f.status !== "Paid" && (
+                      {f.status !== "Paid" && f.student && (
                         <button onClick={() => handleSendReminder(f._id)} disabled={remindingId === f._id} className="btn-outline text-xs py-1.5 px-3">
                           {remindingId === f._id ? "Sending..." : "Remind"}
                         </button>
                       )}
-                      {f.status !== "Paid" ? <button onClick={() => openPayModal(f)} className="btn-outline text-xs py-1.5 px-3">Record Payment</button> : <span className="text-slate-400 text-xs">Fully paid</span>}
+                      {f.status !== "Paid" && f.student ? <button onClick={() => openPayModal(f)} className="btn-outline text-xs py-1.5 px-3">Record Payment</button> : f.status === "Paid" ? <span className="text-slate-400 text-xs">Fully paid</span> : null}
+                      {f.paid > 0 && (
+                        <button onClick={() => handleUndoPayment(f)} disabled={feeActionId === f._id} className="btn-outline text-xs py-1.5 px-3" title="Undo all payment amounts recorded for this fee">
+                          <FaUndo className="inline mr-1" /> {feeActionId === f._id ? "Undoing..." : "Undo Payment"}
+                        </button>
+                      )}
+                      <button onClick={() => handleDeleteFee(f)} disabled={feeActionId === f._id} className="btn-outline text-xs py-1.5 px-3 text-red-600" title="Delete this fee record">
+                        <FaTrash className="inline mr-1" /> Delete Fee
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -166,8 +209,9 @@ const FeeManagement = () => {
       </div>
 
       {payModal && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-navy-light rounded-xl2 shadow-card-hover w-full max-w-sm p-6">
+        createPortal(
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center overflow-y-auto p-4">
+          <div className="bg-white dark:bg-navy-light rounded-xl2 shadow-card-hover w-full max-w-sm max-h-[calc(100dvh-2rem)] overflow-y-auto p-6">
             <h3 className="font-display font-bold text-lg text-navy dark:text-white mb-1">Record Payment</h3>
             <p className="text-sm text-slate-500 mb-4">{payModal.student?.name} &middot; {payModal.month} &middot; Pending: ₹{payModal.pending}</p>
             <form onSubmit={handleRecordPayment} className="space-y-4">
@@ -187,7 +231,9 @@ const FeeManagement = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
+        )
       )}
     </DashboardLayout>
   );

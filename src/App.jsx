@@ -25,6 +25,7 @@ import TeacherManagement from "./pages/TeacherManagement";
 import AssignStudents from "./pages/AssignStudents";
 import TeacherPerformance from "./pages/TeacherPerformance";
 import FeeManagement from "./pages/FeeManagement";
+import MonthlyEarnings from "./pages/MonthlyEarnings";
 
 // Shared between Admin + Teacher (backend scopes data automatically)
 import StudentManagement from "./pages/StudentManagement";
@@ -96,6 +97,7 @@ function App() {
           <Route path="/admin/assign-students" element={<ProtectedRoute allowedRoles={["admin"]}><AssignStudents /></ProtectedRoute>} />
           <Route path="/admin/teacher-performance" element={<ProtectedRoute allowedRoles={["admin"]}><TeacherPerformance /></ProtectedRoute>} />
           <Route path="/admin/fees" element={<ProtectedRoute allowedRoles={["admin"]}><FeeManagement /></ProtectedRoute>} />
+          <Route path="/admin/earnings" element={<ProtectedRoute allowedRoles={["admin"]}><MonthlyEarnings /></ProtectedRoute>} />
           <Route path="/admin/programs" element={<ProtectedRoute allowedRoles={["admin"]}><ProgramManagement /></ProtectedRoute>} />
           <Route path="/admin/results" element={<ProtectedRoute allowedRoles={["admin"]}><ResultsManagement /></ProtectedRoute>} />
           <Route path="/admin/story" element={<ProtectedRoute allowedRoles={["admin"]}><StoryManagement /></ProtectedRoute>} />

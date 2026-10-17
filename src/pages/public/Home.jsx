@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import PublicLayout from "../../components/PublicLayout";
-import api from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import { PLATFORM_NAME, PLATFORM_TAGLINE } from "../../config/branding";
 import { FaAtom, FaLock, FaUser, FaUserGraduate } from "react-icons/fa";
@@ -54,8 +53,6 @@ const defaultForm = {
 };
 
 const Home = () => {
-  const [academies, setAcademies] = useState([]);
-  const [academyId, setAcademyId] = useState("");
   const [studentId, setStudentId] = useState("");
   const [portalPassword, setPortalPassword] = useState("");
   const [portalLoading, setPortalLoading] = useState(false);
@@ -67,20 +64,6 @@ const Home = () => {
   const [submitted, setSubmitted] = useState(false);
   const { loginStudent } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const controller = new AbortController();
-    api.get("/public/academies", { signal: controller.signal })
-      .then((response) => {
-        const activeAcademies = response.data.data || [];
-        setAcademies(activeAcademies);
-        setAcademyId(activeAcademies[0]?._id || "");
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) toast.error("Could not load academy details");
-      });
-    return () => controller.abort();
-  }, []);
 
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000/api"}/public/programs`)
@@ -124,14 +107,9 @@ const Home = () => {
 
   const handleStudentLogin = async (event) => {
     event.preventDefault();
-    if (!academyId) {
-      toast.error("No active academy is available for login");
-      return;
-    }
-
     setPortalLoading(true);
     try {
-      await loginStudent(studentId.trim(), portalPassword, academyId);
+      await loginStudent(studentId.trim(), portalPassword);
       toast.success("Welcome back!");
       navigate("/student/dashboard");
     } catch (error) {
@@ -204,12 +182,6 @@ const Home = () => {
                 </div>
                 <form className="hero-portal-form" onSubmit={handleStudentLogin}>
                   <label>
-                    <span>Academy</span>
-                    <select value={academyId} onChange={(event) => setAcademyId(event.target.value)} required disabled={academies.length === 0}>
-                      {academies.length === 0 ? <option value="">No active academy available</option> : academies.map((academy) => <option key={academy._id} value={academy._id}>{academy.academyName}</option>)}
-                    </select>
-                  </label>
-                  <label>
                     <span>Student ID</span>
                     <div className="hero-portal-input"><FaUser aria-hidden="true" /><input type="text" value={studentId} onChange={(event) => setStudentId(event.target.value)} placeholder="Enter your student ID" autoComplete="username" required /></div>
                   </label>
@@ -217,7 +189,7 @@ const Home = () => {
                     <span>Password</span>
                     <div className="hero-portal-input"><FaLock aria-hidden="true" /><input type="password" value={portalPassword} onChange={(event) => setPortalPassword(event.target.value)} placeholder="Enter your password" autoComplete="current-password" required /></div>
                   </label>
-                  <button type="submit" className="primary-button full-width" disabled={portalLoading || academies.length === 0}>
+                  <button type="submit" className="primary-button full-width" disabled={portalLoading}>
                     {portalLoading ? "Signing in..." : "STUDENT LOGIN"}
                   </button>
                 </form>

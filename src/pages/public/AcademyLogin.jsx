@@ -1,15 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { FaUserTie, FaUserGraduate, FaLock, FaUser } from "react-icons/fa";
 import PublicLayout, { LogoMark } from "../../components/PublicLayout";
-import api from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import { PLATFORM_NAME } from "../../config/branding";
 
 const AcademyLogin = () => {
-  const [academies, setAcademies] = useState([]);
-  const [academyId, setAcademyId] = useState("");
   const [mode, setMode] = useState("staff");
   const [email, setEmail] = useState("");
   const [studentId, setStudentId] = useState("");
@@ -18,33 +15,15 @@ const AcademyLogin = () => {
   const { loginStaff, loginStudent } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const controller = new AbortController();
-
-    api.get("/public/academies", { signal: controller.signal }).then((res) => {
-      const activeAcademies = res.data.data || [];
-      setAcademies(activeAcademies);
-      if (activeAcademies[0]?._id) setAcademyId(activeAcademies[0]._id);
-    }).catch(() => {
-      if (!controller.signal.aborted) toast.error("Could not load academy details");
-    });
-
-    return () => controller.abort();
-  }, []);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!academyId) {
-      toast.error("Select your academy first");
-      return;
-    }
     setLoading(true);
     try {
       if (mode === "staff") {
-        const data = await loginStaff(email, password, academyId);
+        const data = await loginStaff(email, password);
         navigate(data.role === "admin" ? "/admin/dashboard" : "/teacher/dashboard");
       } else {
-        await loginStudent(studentId, password, academyId);
+        await loginStudent(studentId, password);
         navigate("/student/dashboard");
       }
       toast.success("Welcome back!");
@@ -93,7 +72,7 @@ const AcademyLogin = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="portal-login-form">
-              <p className="portal-academy-context">{academies[0]?.academyName || "Next GenLearning Academy"}</p>
+              <p className="portal-academy-context">{PLATFORM_NAME}</p>
 
               {mode === "student" ? (
                 <div className="field-block">
