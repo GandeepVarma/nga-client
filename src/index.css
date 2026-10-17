@@ -2412,6 +2412,19 @@ body,
   box-shadow: 0 8px 24px rgba(29, 59, 95, 0.08);
 }
 
+.admin-main .student-welcome-card {
+  background: #244A76;
+  color: #FFFFFF;
+}
+
+.admin-main .student-welcome-card h2 {
+  color: #FFFFFF;
+}
+
+.admin-main .student-welcome-card p {
+  color: #EAF1F8;
+}
+
 .admin-main table thead tr {
   background: #244A76;
   color: #FFFFFF;
@@ -2993,9 +3006,37 @@ body,
   to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
-html:not(.dark) .page-shell :is(.text-slate-400, .text-slate-500):not(.site-header *):not(.site-footer *),
-html:not(.dark) .admin-main :is(.text-slate-400, .text-slate-500) {
+.page-shell :is(.text-slate-400, .text-slate-500):not(.site-header *):not(.site-footer *),
+.admin-main :is(.text-slate-400, .text-slate-500) {
   color: #475569 !important;
+}
+
+.home-page-shell .hero-title strong {
+  background-image: none;
+  color: #244A76;
+}
+
+.home-page-shell :is(
+  .hero-text,
+  .headline-stack span,
+  .section-header > p:last-child,
+  .about-copy,
+  .program-card p,
+  .reason-card p,
+  .step-card p,
+  .achievement-card p,
+  .testimonial-card p,
+  .page-copy-card p,
+  .contact-card p,
+  .resource-card p,
+  .location-details > p:not(.eyebrow),
+  .story-narrative > p,
+  .digital-hub-intro,
+  .featured-program-copy > p:not(.eyebrow):not(.program-fee),
+  .program-empty-state p,
+  .home-program-empty p
+) {
+  color: #475569;
 }
 @keyframes home-slide-in-mobile {
   from { opacity: 0; transform: translate3d(-12px, 0, 0); }

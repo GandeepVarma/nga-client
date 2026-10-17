@@ -32,7 +32,7 @@ const StudentDashboard = () => {
 
   return (
     <DashboardLayout title="My Dashboard">
-      <div className="card flex items-center gap-4 mb-6 bg-navy text-white">
+      <div className="student-welcome-card card flex items-center gap-4 mb-6 bg-navy text-white">
         <div className="w-16 h-16 rounded-full bg-gold flex items-center justify-center text-navy font-display font-bold text-2xl">{data.welcome.name[0]}</div>
         <div>
           <h2 className="font-display font-bold text-xl">Welcome back, {data.welcome.name}!</h2>
