@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { FaPlus, FaSearch, FaEdit, FaTrash, FaEye, FaTimes } from "react-icons/fa";
+import { FaPlus, FaSearch, FaEdit, FaTrash, FaEye, FaTimes, FaFileExcel, FaChartBar } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import * as XLSX from "xlsx";
 import DashboardLayout from "../components/DashboardLayout";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
@@ -38,6 +39,14 @@ const getAttendancePercentage = (presentDays, totalDays) => totalDays > 0
   ? Number(((presentDays / totalDays) * 100).toFixed(2))
   : null;
 
+const getReportPeriodLabel = (period, year, month, quarter) => {
+  if (period === "month") {
+    return new Date(Number(year), Number(month) - 1, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  }
+  if (period === "quarter") return `Q${quarter} ${year}`;
+  return year;
+};
+
 const StudentManagement = ({ basePath = "/teacher" }) => {
   const { role } = useAuth();
   const isAdmin = role === "admin";
@@ -62,6 +71,14 @@ const StudentManagement = ({ basePath = "/teacher" }) => {
   const [historyDateFilter, setHistoryDateFilter] = useState("all");
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
+  const now = new Date();
+  const [showLowAttendanceReport, setShowLowAttendanceReport] = useState(false);
+  const [reportPeriod, setReportPeriod] = useState("month");
+  const [reportYear, setReportYear] = useState(String(now.getFullYear()));
+  const [reportMonth, setReportMonth] = useState(String(now.getMonth() + 1));
+  const [reportQuarter, setReportQuarter] = useState(String(Math.floor(now.getMonth() / 3) + 1));
+  const [lowAttendanceStudents, setLowAttendanceStudents] = useState(null);
+  const [lowAttendanceLoading, setLowAttendanceLoading] = useState(false);
 
   const fetchStudents = useCallback(async () => {
     setLoading(true);
@@ -254,6 +271,39 @@ const StudentManagement = ({ basePath = "/teacher" }) => {
     }
   };
 
+  const generateLowAttendanceReport = async () => {
+    setLowAttendanceLoading(true);
+    setLowAttendanceStudents(null);
+    try {
+      const params = { period: reportPeriod, year: reportYear };
+      if (reportPeriod === "month") params.month = reportMonth;
+      if (reportPeriod === "quarter") params.quarter = reportQuarter;
+      const response = await api.get("/attendance/low-attendance", { params });
+      setLowAttendanceStudents(response.data.data || []);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Could not generate the low attendance report");
+    } finally {
+      setLowAttendanceLoading(false);
+    }
+  };
+
+  const downloadLowAttendanceReport = () => {
+    if (!lowAttendanceStudents) return;
+    const rows = lowAttendanceStudents.map((student) => ({
+      "Student ID": student.studentId,
+      "Student Name": student.name,
+      Class: student.class,
+      "Present Days": student.presentDays,
+      "Total Marked Days": student.totalDays,
+      "Attendance (%)": Number(student.attendancePercent.toFixed(2)),
+    }));
+    const sheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, sheet, "Low Attendance");
+    const filePeriod = getReportPeriodLabel(reportPeriod, reportYear, reportMonth, reportQuarter).replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "");
+    XLSX.writeFile(workbook, `low-attendance-${filePeriod}.xlsx`);
+  };
+
   return (
     <DashboardLayout title={isAdmin ? "All Students" : "My Students"}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
@@ -274,9 +324,14 @@ const StudentManagement = ({ basePath = "/teacher" }) => {
             onChange={(e) => setClassFilter(e.target.value)}
           />
         </div>
-        <button onClick={openAddModal} className="btn-primary flex items-center gap-2 shrink-0">
-          <FaPlus /> Add Student
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={() => { setLowAttendanceStudents(null); setShowLowAttendanceReport(true); }} className="btn-outline flex items-center gap-2 shrink-0">
+            <FaChartBar aria-hidden="true" /> Low Attendance Report
+          </button>
+          <button onClick={openAddModal} className="btn-primary flex items-center gap-2 shrink-0">
+            <FaPlus /> Add Student
+          </button>
+        </div>
       </div>
 
       <div className="card p-0 overflow-x-auto">
@@ -425,6 +480,106 @@ const StudentManagement = ({ basePath = "/teacher" }) => {
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {showLowAttendanceReport && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 sm:p-5"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setShowLowAttendanceReport(false);
+          }}
+        >
+          <section role="dialog" aria-modal="true" aria-labelledby="low-attendance-title" className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-card-hover">
+            <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 sm:px-6">
+              <div>
+                <h2 id="low-attendance-title" className="font-display text-lg font-bold text-navy">Students below 75% attendance</h2>
+                <p className="mt-1 text-sm text-slate-500">Attendance is calculated from all marked days in the selected period.</p>
+              </div>
+              <button type="button" aria-label="Close low attendance report" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-navy" onClick={() => setShowLowAttendanceReport(false)}>
+                <FaTimes aria-hidden="true" />
+              </button>
+            </header>
+
+            <div className="min-h-0 overflow-y-auto px-5 py-5 sm:px-6">
+              <div className="flex flex-wrap items-end gap-3">
+                <label className="text-sm font-medium text-slate-600">
+                  Report period
+                  <select className="input-field mt-1 min-w-36" value={reportPeriod} onChange={(event) => { setReportPeriod(event.target.value); setLowAttendanceStudents(null); }}>
+                    <option value="month">Monthly</option>
+                    <option value="quarter">Quarterly</option>
+                    <option value="year">Yearly</option>
+                  </select>
+                </label>
+                {reportPeriod === "month" && (
+                  <label className="text-sm font-medium text-slate-600">
+                    Month
+                    <select className="input-field mt-1 min-w-36" value={reportMonth} onChange={(event) => { setReportMonth(event.target.value); setLowAttendanceStudents(null); }}>
+                      {Array.from({ length: 12 }, (_, index) => (
+                        <option key={index + 1} value={index + 1}>{new Date(2000, index, 1).toLocaleDateString(undefined, { month: "long" })}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                {reportPeriod === "quarter" && (
+                  <label className="text-sm font-medium text-slate-600">
+                    Quarter
+                    <select className="input-field mt-1 min-w-36" value={reportQuarter} onChange={(event) => { setReportQuarter(event.target.value); setLowAttendanceStudents(null); }}>
+                      {[1, 2, 3, 4].map((quarter) => <option key={quarter} value={quarter}>Q{quarter}</option>)}
+                    </select>
+                  </label>
+                )}
+                <label className="text-sm font-medium text-slate-600">
+                  Year
+                  <input type="number" min="1900" max="9999" className="input-field mt-1 w-28" value={reportYear} onChange={(event) => { setReportYear(event.target.value); setLowAttendanceStudents(null); }} />
+                </label>
+                <button type="button" className="btn-primary" disabled={lowAttendanceLoading || !reportYear} onClick={generateLowAttendanceReport}>
+                  {lowAttendanceLoading ? "Generating..." : "Generate List"}
+                </button>
+                {lowAttendanceStudents && lowAttendanceStudents.length > 0 && (
+                  <button type="button" className="btn-outline flex items-center gap-2" onClick={downloadLowAttendanceReport}>
+                    <FaFileExcel aria-hidden="true" /> Download Excel
+                  </button>
+                )}
+              </div>
+
+              {lowAttendanceStudents && (
+                <div className="mt-5">
+                  <p className="mb-3 text-sm text-slate-600">
+                    {getReportPeriodLabel(reportPeriod, reportYear, reportMonth, reportQuarter)} · {lowAttendanceStudents.length} student{lowAttendanceStudents.length === 1 ? "" : "s"} below 75%
+                  </p>
+                  {lowAttendanceStudents.length === 0 ? (
+                    <p className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">No students are below 75% attendance for this period.</p>
+                  ) : (
+                    <div className="max-h-[50vh] overflow-auto rounded-lg border border-slate-200">
+                      <table className="w-full text-left text-sm">
+                        <thead className="sticky top-0 bg-slate-50 text-slate-600">
+                          <tr>
+                            <th className="px-4 py-3 font-semibold">Student ID</th>
+                            <th className="px-4 py-3 font-semibold">Name</th>
+                            <th className="px-4 py-3 font-semibold">Class</th>
+                            <th className="px-4 py-3 font-semibold">Present / Marked</th>
+                            <th className="px-4 py-3 text-right font-semibold">Attendance</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {lowAttendanceStudents.map((student) => (
+                            <tr key={student._id}>
+                              <td className="px-4 py-3">{student.studentId}</td>
+                              <td className="px-4 py-3 font-medium text-navy">{student.name}</td>
+                              <td className="px-4 py-3">{student.class}</td>
+                              <td className="px-4 py-3">{student.presentDays} / {student.totalDays}</td>
+                              <td className="px-4 py-3 text-right font-semibold text-red-700">{Number(student.attendancePercent.toFixed(1))}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </section>
         </div>
       )}
 
