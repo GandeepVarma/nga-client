@@ -28,7 +28,7 @@ const Topbar = ({ onMenuClick, title }) => {
         >
           <FaBars />
         </button>
-        <h1 className="font-display font-semibold text-lg text-navy dark:text-white">
+        <h1 className="dashboard-page-title font-display font-semibold text-lg">
           {title}
         </h1>
       </div>

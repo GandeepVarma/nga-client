@@ -5,9 +5,19 @@ import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement
 import DashboardLayout from "../components/DashboardLayout";
 import StatCard from "../components/StatCard";
 import api from "../api/axios";
-import { FaCalendarCheck, FaClipboardList, FaBookOpen, FaMoneyBillWave } from "react-icons/fa";
+import { FaCalendarCheck, FaClipboardList, FaBookOpen, FaMoneyBillWave, FaClock } from "react-icons/fa";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend);
+
+const formatClassDate = (value) => {
+  const [year, month, day] = value.slice(0, 10).split("-").map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
 
 const StudentDashboard = () => {
   const [data, setData] = useState(null);
@@ -47,6 +57,40 @@ const StudentDashboard = () => {
         <StatCard icon={FaMoneyBillWave} label="Fee Pending" value={`₹${data.feeStatus?.pending ?? 0}`} accent="bg-red-500/15 text-red-500" />
       </div>
 
+      <section className="card mb-6">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">Your timetable</p>
+            <h3 className="mt-1 font-display font-semibold text-navy dark:text-white">Upcoming Classes</h3>
+          </div>
+          <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+            {data.upcomingClasses?.length || 0} scheduled
+          </span>
+        </div>
+        {!data.upcomingClasses?.length ? (
+          <p className="rounded-2xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500">
+            No upcoming classes scheduled for your class and batch.
+          </p>
+        ) : (
+          <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {data.upcomingClasses.map((scheduledClass) => (
+              <li key={scheduledClass._id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-navy-lighter dark:bg-navy-light">
+                <p className="flex items-center gap-2 text-sm font-semibold text-navy dark:text-white">
+                  <FaCalendarCheck className="text-blue-600" aria-hidden="true" />
+                  {formatClassDate(scheduledClass.date)}
+                </p>
+                <p className="mt-2 font-semibold text-slate-800 dark:text-slate-100">{scheduledClass.class}</p>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">{scheduledClass.batch || "No batch"}</p>
+                <span className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${scheduledClass.session === "morning" ? "bg-amber-100 text-amber-800" : "bg-indigo-100 text-indigo-800"}`}>
+                  <FaClock aria-hidden="true" />
+                  {scheduledClass.session === "morning" ? "Morning" : "Evening"} session
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="card lg:col-span-2">
           <h3 className="font-display font-semibold text-navy dark:text-white mb-4">Progress Graph</h3>
@@ -66,6 +110,7 @@ const StudentDashboard = () => {
           )}
         </div>
       </div>
+
     </DashboardLayout>
   );
 };

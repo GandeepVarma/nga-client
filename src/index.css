@@ -3011,6 +3011,16 @@ body,
   color: #475569 !important;
 }
 
+.admin-topbar {
+  background-color: #244A76 !important;
+}
+
+.admin-topbar .dashboard-page-title {
+  color: #FFFFFF !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
 .home-page-shell .hero-title strong {
   background-image: none;
   color: #244A76;
