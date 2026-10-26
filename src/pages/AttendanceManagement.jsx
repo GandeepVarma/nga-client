@@ -1,235 +1,601 @@
 import React, { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { FaSave } from "react-icons/fa";
+import {
+  FaArrowLeft,
+  FaCalendarAlt,
+  FaCheck,
+  FaChartBar,
+  FaClock,
+  FaFileExcel,
+  FaSearch,
+  FaUsers,
+} from "react-icons/fa";
+import * as XLSX from "xlsx";
 import DashboardLayout from "../components/DashboardLayout";
 import api from "../api/axios";
 
-const todayStr = () => {
-  const today = new Date();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
-  return `${today.getFullYear()}-${month}-${day}`;
-};
 const statusOptions = ["Present", "Absent", "Leave"];
 const classOrder = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
+const ALL_CLASSES = "__all_classes__";
+const ALL_BATCHES = "__all_batches__";
+const getReportPeriodLabel = (period, year, month, quarter) => {
+  if (period === "month") {
+    return new Date(Number(year), Number(month) - 1, 1).toLocaleDateString(undefined, {
+      month: "long",
+      year: "numeric",
+    });
+  }
+  if (period === "quarter") return `Q${quarter} ${year}`;
+  return String(year);
+};
+
+const localDateString = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const today = new Date();
+const todayDateString = localDateString(today);
+
+const dateFromApi = (value) => {
+  const [year, month, day] = value.slice(0, 10).split("-").map(Number);
+  return new Date(year, month - 1, day);
+};
+
+const formatDate = (value) =>
+  dateFromApi(value).toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+const sessionLabel = (session) => (session === "morning" ? "Morning" : "Evening");
 
 const AttendanceManagement = () => {
-  const [date, setDate] = useState(todayStr());
-  const [classFilter, setClassFilter] = useState("all");
   const [students, setStudents] = useState([]);
+  const [upcomingClasses, setUpcomingClasses] = useState([]);
+  const [historyClasses, setHistoryClasses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [refreshCount, setRefreshCount] = useState(0);
+  const [className, setClassName] = useState("");
+  const [batch, setBatch] = useState(ALL_BATCHES);
+  const [session, setSession] = useState("morning");
+  const [scheduleDate, setScheduleDate] = useState(todayDateString);
+  const [scheduling, setScheduling] = useState(false);
+  const [historySession, setHistorySession] = useState("morning");
+  const [activeClass, setActiveClass] = useState(null);
+  const [roster, setRoster] = useState([]);
   const [attendanceByStudent, setAttendanceByStudent] = useState({});
-  const [studentsLoading, setStudentsLoading] = useState(true);
-  const [attendanceLoading, setAttendanceLoading] = useState(true);
-  const [studentsError, setStudentsError] = useState(false);
-  const [attendanceError, setAttendanceError] = useState(false);
+  const [rosterLoading, setRosterLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [loadAttempt, setLoadAttempt] = useState(0);
-  const [collapsedGroups, setCollapsedGroups] = useState(() => new Set());
+  const [search, setSearch] = useState("");
+  const now = new Date();
+  const [reportPeriod, setReportPeriod] = useState("month");
+  const [reportYear, setReportYear] = useState(String(now.getFullYear()));
+  const [reportMonth, setReportMonth] = useState(String(now.getMonth() + 1));
+  const [reportQuarter, setReportQuarter] = useState(String(Math.floor(now.getMonth() / 3) + 1));
+  const [reportSession, setReportSession] = useState("all");
+  const [lowAttendanceStudents, setLowAttendanceStudents] = useState(null);
+  const [reportLoading, setReportLoading] = useState(false);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    setStudentsLoading(true);
-    setStudentsError(false);
-    api.get("/students", { signal: controller.signal })
-      .then((response) => setStudents((response.data.data || []).filter((student) => student.status === "Active")))
-      .catch(() => {
-        if (!controller.signal.aborted) {
-          setStudentsError(true);
-          toast.error("Could not load students");
-        }
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setStudentsLoading(false);
-      });
-    return () => controller.abort();
-  }, [loadAttempt]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    setAttendanceLoading(true);
-    setAttendanceError(false);
-    api.get("/attendance", { params: { date }, signal: controller.signal })
-      .then((response) => {
-        const savedStatuses = {};
-        (response.data.data || []).forEach((record) => {
-          const studentId = record.student?._id || record.student;
-          if (studentId) savedStatuses[studentId] = record.status;
-        });
-        setAttendanceByStudent(savedStatuses);
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) {
-          setAttendanceError(true);
-          toast.error("Could not load attendance for this date");
-        }
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setAttendanceLoading(false);
-      });
-    return () => controller.abort();
-  }, [date, loadAttempt]);
-
-  const classes = useMemo(() => [...new Set(students.map((student) => student.class).filter(Boolean))].sort(classOrder.compare), [students]);
-  const visibleStudents = useMemo(
-    () => students.filter((student) => classFilter === "all" || student.class === classFilter),
-    [classFilter, students]
+  const classes = useMemo(
+    () => [...new Set(students.map((student) => student.class).filter(Boolean))].sort(classOrder.compare),
+    [students]
   );
-  const groups = useMemo(() => {
-    const grouped = new Map();
-    visibleStudents.forEach((student) => {
-      const className = student.class || "Unassigned class";
-      const batchName = student.batch?.trim() || "";
-      const key = `${className}::${batchName}`;
-      if (!grouped.has(key)) grouped.set(key, { key, className, batchName, students: [] });
-      grouped.get(key).students.push(student);
-    });
-    return [...grouped.values()].sort((a, b) => classOrder.compare(a.className, b.className) || classOrder.compare(a.batchName, b.batchName));
-  }, [visibleStudents]);
-  const summary = useMemo(() => visibleStudents.reduce((counts, student) => {
-    const status = attendanceByStudent[student._id] || "Present";
-    counts[status] = (counts[status] || 0) + 1;
-    return counts;
-  }, { total: visibleStudents.length, Present: 0, Absent: 0, Leave: 0 }), [attendanceByStudent, visibleStudents]);
-  const attendancePercentage = summary.total > 0 ? Number(((summary.Present / summary.total) * 100).toFixed(2)) : null;
+  const batches = useMemo(
+    () => [...new Set(students
+      .filter((student) => className === ALL_CLASSES || student.class === className)
+      .map((student) => student.batch?.trim() || ""))].sort(classOrder.compare),
+    [className, students]
+  );
+  const visibleRoster = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+    if (!normalizedSearch) return roster;
+    return roster.filter((student) =>
+      `${student.name} ${student.studentId}`.toLowerCase().includes(normalizedSearch)
+    );
+  }, [roster, search]);
+  const attendanceSummary = useMemo(
+    () => roster.reduce((counts, student) => {
+      const status = attendanceByStudent[student._id];
+      if (status) counts[status] += 1;
+      else counts.unmarked += 1;
+      return counts;
+    }, { Present: 0, Absent: 0, Leave: 0, unmarked: 0 }),
+    [attendanceByStudent, roster]
+  );
 
-  const handleSave = async () => {
-    if (visibleStudents.length === 0 || studentsError || attendanceError) return;
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setLoadError(false);
+    Promise.all([
+      api.get("/students", { signal: controller.signal }),
+      api.get("/attendance/sessions", { params: { period: "upcoming" }, signal: controller.signal }),
+      api.get("/attendance/sessions", { params: { period: "history" }, signal: controller.signal }),
+    ])
+      .then(([studentResponse, upcomingResponse, historyResponse]) => {
+        const activeStudents = (studentResponse.data.data || []).filter((student) => student.status === "Active");
+        setStudents(activeStudents);
+        setUpcomingClasses(upcomingResponse.data.data || []);
+        setHistoryClasses(historyResponse.data.data || []);
+        setClassName((current) => current || [...new Set(activeStudents.map((item) => item.class).filter(Boolean))].sort(classOrder.compare)[0] || "");
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setLoadError(true);
+          toast.error("Could not load attendance data");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, [refreshCount]);
+
+  useEffect(() => {
+    if (batch !== ALL_BATCHES && !batches.includes(batch)) setBatch(ALL_BATCHES);
+  }, [batch, batches]);
+
+  const refreshClasses = () => setRefreshCount((count) => count + 1);
+
+  const scheduleClass = async (event) => {
+    event.preventDefault();
+    setScheduling(true);
+    try {
+      const response = await api.post("/attendance/sessions", {
+        class: className === ALL_CLASSES ? "" : className,
+        batch,
+        allClasses: className === ALL_CLASSES,
+        allBatches: batch === ALL_BATCHES,
+        session,
+        date: scheduleDate,
+      });
+      setUpcomingClasses((current) =>
+        [...current, ...response.data.data].sort((a, b) => a.date.localeCompare(b.date) || a.session.localeCompare(b.session))
+      );
+      toast.success(`${response.data.data.length} class${response.data.data.length === 1 ? "" : "es"} scheduled successfully.`);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Could not schedule this class");
+    } finally {
+      setScheduling(false);
+    }
+  };
+
+  const openClass = async (scheduledClass) => {
+    setActiveClass(scheduledClass);
+    setRoster([]);
+    setAttendanceByStudent({});
+    setSearch("");
+    setRosterLoading(true);
+    try {
+      const response = await api.get(`/attendance/sessions/${scheduledClass._id}`);
+      setRoster(response.data.data.students);
+      setAttendanceByStudent(Object.fromEntries(
+        response.data.data.students
+          .filter((student) => student.attendanceStatus)
+          .map((student) => [student._id, student.attendanceStatus])
+      ));
+    } catch (error) {
+      setActiveClass(null);
+      toast.error(error.response?.data?.message || "Could not open this class");
+    } finally {
+      setRosterLoading(false);
+    }
+  };
+
+  const saveAttendance = async () => {
+    const records = roster
+      .filter((student) => attendanceByStudent[student._id])
+      .map((student) => ({ studentId: student._id, status: attendanceByStudent[student._id] }));
+    if (!records.length) {
+      toast.error("Mark at least one student before saving.");
+      return;
+    }
     setSaving(true);
     try {
-      const records = visibleStudents.map((student) => ({
-        studentId: student._id,
-        class: student.class || "Unassigned class",
-        status: attendanceByStudent[student._id] || "Present",
-      }));
-      await api.post("/attendance", { date, records });
-      setAttendanceByStudent((current) => ({
+      await api.put(`/attendance/sessions/${activeClass._id}/attendance`, { records });
+      toast.success("Attendance saved. You can reopen this class to edit it later.");
+      setActiveClass((current) => ({
         ...current,
-        ...Object.fromEntries(records.map((record) => [record.studentId, record.status])),
+        attendance: records.reduce((counts, record) => {
+          counts[record.status] = (counts[record.status] || 0) + 1;
+          return counts;
+        }, {}),
       }));
-      toast.success("Attendance saved successfully.");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to save attendance");
+      refreshClasses();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Could not save attendance");
     } finally {
       setSaving(false);
     }
   };
 
-  const setStudentStatus = (studentId, status) => {
-    setAttendanceByStudent((current) => ({ ...current, [studentId]: status }));
-  };
-
-  const markGroupPresent = (groupStudents) => {
+  const markAllPresent = () => {
     setAttendanceByStudent((current) => ({
       ...current,
-      ...Object.fromEntries(groupStudents.map((student) => [student._id, "Present"])),
+      ...Object.fromEntries(roster.map((student) => [student._id, "Present"])),
     }));
   };
 
-  const toggleGroup = (groupKey) => {
-    setCollapsedGroups((current) => {
-      const next = new Set(current);
-      if (next.has(groupKey)) next.delete(groupKey);
-      else next.add(groupKey);
-      return next;
-    });
+  const generateLowAttendanceReport = async () => {
+    setReportLoading(true);
+    setLowAttendanceStudents(null);
+    try {
+      const params = {
+        period: reportPeriod,
+        year: reportYear,
+        session: reportSession,
+      };
+      if (reportPeriod === "month") params.month = reportMonth;
+      if (reportPeriod === "quarter") params.quarter = reportQuarter;
+      const response = await api.get("/attendance/low-attendance", { params });
+      setLowAttendanceStudents(response.data.data || []);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Could not generate the low attendance report");
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  const downloadLowAttendanceReport = () => {
+    if (!lowAttendanceStudents) return;
+    const rows = lowAttendanceStudents.map((student) => ({
+      "Student ID": student.studentId,
+      "Student Name": student.name,
+      Class: student.class,
+      Batch: student.batch || "No batch",
+      "Present Sessions": student.presentDays,
+      "Absent Sessions": student.absentDays,
+      "Leave Sessions": student.leaveDays,
+      "Total Marked Sessions": student.totalDays,
+      "Attendance (%)": Number(student.attendancePercent.toFixed(2)),
+    }));
+    const sheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, sheet, "Below 75 Attendance");
+    const period = getReportPeriodLabel(reportPeriod, reportYear, reportMonth, reportQuarter)
+      .replace(/[^a-z0-9]+/gi, "-")
+      .replace(/^-|-$/g, "");
+    const session = reportSession === "all" ? "all-sessions" : `${reportSession}-session`;
+    XLSX.writeFile(workbook, `attendance-below-75-${period}-${session}.xlsx`);
+  };
+
+  const renderClassCard = (item) => {
+    const present = item.attendance?.Present || 0;
+    const absent = item.attendance?.Absent || 0;
+    const leave = item.attendance?.Leave || 0;
+    const marked = present + absent + leave;
+    return (
+      <article key={item._id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-blue-200 hover:shadow-card">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="flex items-center gap-2 text-sm font-semibold text-navy">
+              <FaCalendarAlt className="text-blue-500" aria-hidden="true" />
+              {formatDate(item.date)}
+            </p>
+            <p className="mt-2 text-base font-bold text-slate-800">{item.class}</p>
+            <p className="mt-1 text-sm text-slate-500">{item.batch || "No batch"} · {sessionLabel(item.session)} session</p>
+          </div>
+          <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${item.session === "morning" ? "bg-amber-50 text-amber-700" : "bg-indigo-50 text-indigo-700"}`}>
+            <FaClock aria-hidden="true" /> {sessionLabel(item.session)}
+          </span>
+        </div>
+        <div className="mt-4 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
+          <p className="text-xs text-slate-500">
+            {marked ? `${marked} marked · ${present} present · ${absent} absent` : "Attendance not marked yet"}
+          </p>
+          <button type="button" className="btn-secondary px-4 py-2 text-xs" onClick={() => openClass(item)}>
+            {marked ? "Open / Edit" : "Open class"}
+          </button>
+        </div>
+      </article>
+    );
   };
 
   return (
     <DashboardLayout title="Attendance Management">
-      <div className="card mb-5">
-        <div className="flex flex-wrap items-end gap-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium" htmlFor="attendance-date">Date</label>
-            <input id="attendance-date" type="date" className="input-field" value={date} max={todayStr()} onChange={(event) => setDate(event.target.value)} />
+      <div className="mx-auto max-w-7xl space-y-6">
+        <section className="overflow-hidden rounded-3xl bg-gradient-to-r from-[#1d3b5f] to-[#315f8f] p-6 text-white shadow-card sm:p-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-100">Class register</p>
+          <div className="mt-3 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <div>
+              <h2 className="font-display text-2xl font-bold sm:text-3xl">Plan a class. Take attendance.</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-blue-100">
+                Schedule a morning or evening session for any class and batch in your student records. Attendance is saved against that scheduled class.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-3 text-sm">
+              <FaUsers aria-hidden="true" />
+              <span>{students.length} active students</span>
+            </div>
           </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium" htmlFor="attendance-class">Class</label>
-            <select id="attendance-class" className="input-field" value={classFilter} onChange={(event) => setClassFilter(event.target.value)}>
-              <option value="all">All Classes</option>
-              {classes.map((className) => <option key={className} value={className}>{className}</option>)}
-            </select>
-          </div>
-        </div>
-      </div>
+        </section>
 
-      <section aria-label="Attendance summary" className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          ["Total Students", summary.total],
-          ["Present", summary.Present],
-          ["Absent", summary.Absent],
-          ["Attendance", attendancePercentage == null ? "—" : `${attendancePercentage}%`],
-        ].map(([label, value]) => (
-          <div key={label} className="card p-4">
-            <p className="text-xs font-medium text-slate-500">{label}</p>
-            <p className="mt-1 font-display text-xl font-bold text-navy">{value}</p>
+        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-card sm:p-6">
+          <div className="mb-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">Schedule a session</p>
+            <h3 className="mt-1 font-display text-xl font-bold text-navy">Add an upcoming class</h3>
           </div>
-        ))}
-      </section>
+          <form onSubmit={scheduleClass} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700" htmlFor="scheduled-class">Class</label>
+              <select id="scheduled-class" className="input-field" value={className} onChange={(event) => setClassName(event.target.value)} required disabled={!classes.length}>
+                {classes.length ? <>
+                  <option value={ALL_CLASSES}>All classes</option>
+                  {classes.map((value) => <option key={value} value={value}>{value}</option>)}
+                </> : <option value="">No classes found</option>}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700" htmlFor="scheduled-batch">Batch</label>
+              <select id="scheduled-batch" className="input-field" value={batch} onChange={(event) => setBatch(event.target.value)} disabled={!batches.length}>
+                <option value={ALL_BATCHES}>All batches</option>
+                {batches.map((value, index) => <option key={`${value}-${index}`} value={value}>{value || "No batch"}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700" htmlFor="scheduled-session">Session</label>
+              <select id="scheduled-session" className="input-field" value={session} onChange={(event) => setSession(event.target.value)}>
+                <option value="morning">Morning</option>
+                <option value="evening">Evening</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700" htmlFor="scheduled-date">Date</label>
+              <input id="scheduled-date" type="date" className="input-field" min={todayDateString} value={scheduleDate} onChange={(event) => setScheduleDate(event.target.value)} required />
+            </div>
+            <div className="flex items-end">
+              <button type="submit" className="btn-primary min-h-[46px] w-full rounded-2xl" disabled={scheduling || !classes.length || !batches.length}>
+                {scheduling ? "Scheduling..." : "Schedule class"}
+              </button>
+            </div>
+          </form>
+          {!classes.length && !loading && (
+            <p className="mt-3 text-sm text-amber-700">No active students are assigned to your account.</p>
+          )}
+        </section>
 
-      {(studentsLoading || attendanceLoading) ? (
-        <div className="card py-12 text-center text-sm text-slate-500">Loading students and attendance...</div>
-      ) : (studentsError || attendanceError) ? (
-        <div className="card flex flex-col items-center gap-4 py-12 text-center">
-          <p className="text-sm text-slate-600">Attendance data could not be loaded.</p>
-          <button type="button" className="btn-secondary" onClick={() => setLoadAttempt((attempt) => attempt + 1)}>Retry</button>
-        </div>
-      ) : groups.length === 0 ? (
-        <div className="card py-12 text-center text-sm text-slate-500">
-          {students.length === 0 ? "No active students are available." : "No students match this class."}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {groups.map((group) => {
-            const collapsed = collapsedGroups.has(group.key);
-            const title = group.batchName ? `${group.className} · ${group.batchName}` : group.className;
-            return (
-              <section key={group.key} className="card min-w-0 overflow-hidden p-0">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-5">
-                  <button type="button" className="min-w-0 flex-1 text-left" aria-expanded={!collapsed} onClick={() => toggleGroup(group.key)}>
-                    <span className="block truncate font-display font-semibold text-navy">{collapsed ? "▶" : "▼"} {title} — {group.students.length} {group.students.length === 1 ? "Student" : "Students"}</span>
-                  </button>
-                  <button type="button" className="btn-secondary px-3 py-2 text-xs" onClick={() => markGroupPresent(group.students)}>Mark All Present</button>
+        {activeClass && (
+          <section className="rounded-3xl border border-blue-100 bg-white p-5 shadow-card sm:p-6">
+            <div className="flex flex-col justify-between gap-4 border-b border-slate-100 pb-5 sm:flex-row sm:items-center">
+              <div>
+                <button type="button" onClick={() => setActiveClass(null)} className="mb-3 inline-flex items-center gap-2 text-xs font-semibold text-blue-700 hover:text-blue-900">
+                  <FaArrowLeft aria-hidden="true" /> Back to classes
+                </button>
+                <h3 className="font-display text-xl font-bold text-navy">{activeClass.class} · {activeClass.batch || "No batch"}</h3>
+                <p className="mt-1 text-sm text-slate-500">{formatDate(activeClass.date)} · {sessionLabel(activeClass.session)} session · Attendance edits are saved to this session</p>
+              </div>
+              {!rosterLoading && roster.length > 0 && (
+                <button type="button" onClick={markAllPresent} className="btn-secondary px-4 py-2.5 text-sm">Mark all present</button>
+              )}
+            </div>
+
+            <div className="my-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
+              {[
+                ["Students", roster.length, "text-navy"],
+                ["Present", attendanceSummary.Present, "text-emerald-700"],
+                ["Absent", attendanceSummary.Absent, "text-rose-700"],
+                ["Leave", attendanceSummary.Leave, "text-amber-700"],
+                ["Unmarked", attendanceSummary.unmarked, "text-slate-600"],
+              ].map(([label, value, color]) => (
+                <div key={label} className="rounded-2xl bg-slate-50 px-4 py-3">
+                  <p className="text-xs text-slate-500">{label}</p>
+                  <p className={`mt-1 text-xl font-bold ${color}`}>{value}</p>
                 </div>
-                {!collapsed && <div className="divide-y divide-slate-100">
-                  {group.students.map((student) => {
-                    const selectedStatus = attendanceByStudent[student._id] || "Present";
-                    return (
-                      <div key={student._id} className="grid min-w-0 grid-cols-1 items-center gap-3 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:px-5">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-navy">{student.name}</p>
-                          <p className="truncate text-xs text-slate-500">{student.studentId}{student.batch && !group.batchName ? ` · ${student.batch}` : ""}</p>
-                        </div>
-                        <div role="group" aria-label={`Attendance for ${student.name}`} className="grid grid-cols-3 gap-1 rounded-lg bg-slate-100 p-1 sm:flex">
-                          {statusOptions.map((status) => {
-                            const selected = selectedStatus === status;
-                            const selectedClass = status === "Present" ? "bg-emerald-600 text-white" : status === "Absent" ? "bg-red-600 text-white" : "bg-amber-500 text-white";
-                            return (
-                              <button
-                                key={status}
-                                type="button"
-                                aria-pressed={selected}
-                                onClick={() => setStudentStatus(student._id, status)}
-                                className={`min-h-10 rounded-md px-3 text-xs font-semibold transition-colors ${selected ? selectedClass : "text-slate-600 hover:bg-white"}`}
-                              >
-                                {status}
-                              </button>
-                            );
-                          })}
-                        </div>
+              ))}
+            </div>
+
+            <div className="relative mb-4 max-w-sm">
+              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+              <input className="input-field pl-9" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search student name or ID" aria-label="Search students in this class" />
+            </div>
+
+            {rosterLoading ? (
+              <div className="py-10 text-center text-sm text-slate-500">Loading class roster...</div>
+            ) : roster.length === 0 ? (
+              <div className="rounded-2xl bg-slate-50 py-10 text-center text-sm text-slate-500">No active students are assigned to this class and batch.</div>
+            ) : (
+              <>
+                <div className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-100">
+                  {visibleRoster.map((student) => (
+                    <div key={student._id} className="flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-navy">{student.name}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">{student.studentId}</p>
                       </div>
-                    );
-                  })}
-                </div>}
-              </section>
-            );
-          })}
-          <div className="flex justify-end">
-            <button type="button" onClick={handleSave} disabled={saving || visibleStudents.length === 0} className="btn-primary flex min-h-11 items-center gap-2 px-6">
-              <FaSave aria-hidden="true" /> {saving ? "Saving..." : "Save Attendance"}
-            </button>
-          </div>
-        </div>
-      )}
+                      <div role="group" aria-label={`Attendance for ${student.name}`} className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1">
+                        {statusOptions.map((status) => {
+                          const selected = attendanceByStudent[student._id] === status;
+                          const selectedClass = status === "Present"
+                            ? "bg-emerald-600 text-white"
+                            : status === "Absent"
+                              ? "bg-rose-600 text-white"
+                              : "bg-amber-500 text-white";
+                          return (
+                            <button
+                              key={status}
+                              type="button"
+                              aria-pressed={selected}
+                              onClick={() => setAttendanceByStudent((current) => ({ ...current, [student._id]: status }))}
+                              className={`min-h-10 rounded-lg px-3 text-xs font-semibold transition-colors ${selected ? selectedClass : "text-slate-600 hover:bg-white"}`}
+                            >
+                              {selected && <FaCheck className="mr-1 inline" aria-hidden="true" />}
+                              {status}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                  {visibleRoster.length === 0 && <p className="p-6 text-center text-sm text-slate-500">No students match your search.</p>}
+                </div>
+                <div className="mt-5 flex flex-col-reverse justify-between gap-3 sm:flex-row sm:items-center">
+                  <p className="text-xs text-slate-500">You can save partial attendance and reopen this session to finish or edit it.</p>
+                  <button type="button" onClick={saveAttendance} disabled={saving || attendanceSummary.Present + attendanceSummary.Absent + attendanceSummary.Leave === 0} className="btn-primary min-h-11 rounded-2xl px-6">
+                    {saving ? "Saving..." : "Save attendance"}
+                  </button>
+                </div>
+              </>
+            )}
+          </section>
+        )}
+
+        {loading || loadError ? (
+          <section className="rounded-3xl border border-slate-200 bg-white py-12 text-center shadow-card">
+            <p className="text-sm text-slate-600">{loading ? "Loading scheduled classes..." : "Scheduled classes could not be loaded."}</p>
+            {loadError && <button type="button" className="btn-secondary mt-4 px-4 py-2" onClick={refreshClasses}>Retry</button>}
+          </section>
+        ) : (
+          <>
+            <section>
+              <div className="mb-4 flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">Your schedule</p>
+                  <h3 className="mt-1 font-display text-xl font-bold text-navy">Upcoming classes</h3>
+                </div>
+                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">{upcomingClasses.length} scheduled</span>
+              </div>
+              {upcomingClasses.length ? (
+                <div className="grid gap-4 lg:grid-cols-2">{upcomingClasses.map(renderClassCard)}</div>
+              ) : (
+                <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-5 py-10 text-center">
+                  <p className="font-semibold text-slate-700">No upcoming classes scheduled</p>
+                  <p className="mt-1 text-sm text-slate-500">Create a session above to prepare its attendance register.</p>
+                </div>
+              )}
+            </section>
+
+            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-card sm:p-6">
+              <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-rose-600">
+                    <FaChartBar aria-hidden="true" /> Attendance insights
+                  </p>
+                  <h3 className="mt-1 font-display text-xl font-bold text-navy">Students below 75%</h3>
+                  <p className="mt-1 text-sm text-slate-500">Generate a report from recorded attendance in the selected period.</p>
+                </div>
+                {lowAttendanceStudents?.length > 0 && (
+                  <button type="button" className="btn-secondary flex items-center gap-2 px-4 py-2.5 text-sm" onClick={downloadLowAttendanceReport}>
+                    <FaFileExcel aria-hidden="true" /> Download Excel
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap items-end gap-3">
+                <label className="text-sm font-medium text-slate-600">
+                  Period
+                  <select className="input-field mt-1 min-w-36" value={reportPeriod} onChange={(event) => { setReportPeriod(event.target.value); setLowAttendanceStudents(null); }}>
+                    <option value="month">Monthly</option>
+                    <option value="quarter">Quarterly</option>
+                    <option value="year">Yearly</option>
+                  </select>
+                </label>
+                {reportPeriod === "month" && (
+                  <label className="text-sm font-medium text-slate-600">
+                    Month
+                    <select className="input-field mt-1 min-w-36" value={reportMonth} onChange={(event) => { setReportMonth(event.target.value); setLowAttendanceStudents(null); }}>
+                      {Array.from({ length: 12 }, (_, index) => (
+                        <option key={index + 1} value={index + 1}>{new Date(2000, index, 1).toLocaleDateString(undefined, { month: "long" })}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                {reportPeriod === "quarter" && (
+                  <label className="text-sm font-medium text-slate-600">
+                    Quarter
+                    <select className="input-field mt-1 min-w-36" value={reportQuarter} onChange={(event) => { setReportQuarter(event.target.value); setLowAttendanceStudents(null); }}>
+                      {[1, 2, 3, 4].map((quarter) => <option key={quarter} value={quarter}>Q{quarter}</option>)}
+                    </select>
+                  </label>
+                )}
+                <label className="text-sm font-medium text-slate-600">
+                  Session
+                  <select className="input-field mt-1 min-w-36" value={reportSession} onChange={(event) => { setReportSession(event.target.value); setLowAttendanceStudents(null); }}>
+                    <option value="all">All sessions</option>
+                    <option value="morning">Morning</option>
+                    <option value="evening">Evening</option>
+                  </select>
+                </label>
+                <label className="text-sm font-medium text-slate-600">
+                  Year
+                  <input type="number" min="1900" max="9999" className="input-field mt-1 w-28" value={reportYear} onChange={(event) => { setReportYear(event.target.value); setLowAttendanceStudents(null); }} />
+                </label>
+                <button type="button" className="btn-primary min-h-11 rounded-2xl" disabled={reportLoading || !reportYear} onClick={generateLowAttendanceReport}>
+                  {reportLoading ? "Generating..." : "Generate report"}
+                </button>
+              </div>
+              {lowAttendanceStudents && (
+                <div className="mt-5">
+                  <p className="mb-3 text-sm text-slate-600">
+                    {getReportPeriodLabel(reportPeriod, reportYear, reportMonth, reportQuarter)}
+                    {" · "}{reportSession === "all" ? "All sessions" : `${sessionLabel(reportSession)} session`}
+                    {" · "}{lowAttendanceStudents.length} student{lowAttendanceStudents.length === 1 ? "" : "s"} below 75%
+                  </p>
+                  {lowAttendanceStudents.length === 0 ? (
+                    <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">No students are below 75% attendance for this period.</p>
+                  ) : (
+                    <div className="max-h-[28rem] overflow-auto rounded-2xl border border-slate-200">
+                      <table className="w-full min-w-[680px] text-left text-sm">
+                        <thead className="sticky top-0 bg-slate-50 text-slate-600">
+                          <tr>
+                            <th className="px-4 py-3 font-semibold">Student</th>
+                            <th className="px-4 py-3 font-semibold">Class / Batch</th>
+                            <th className="px-4 py-3 font-semibold">Sessions</th>
+                            <th className="px-4 py-3 text-right font-semibold">Attendance</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {lowAttendanceStudents.map((student) => (
+                            <tr key={student._id}>
+                              <td className="px-4 py-3">
+                                <p className="font-semibold text-navy">{student.name}</p>
+                                <p className="mt-0.5 text-xs text-slate-500">{student.studentId}</p>
+                              </td>
+                              <td className="px-4 py-3">{student.class} · {student.batch || "No batch"}</td>
+                              <td className="px-4 py-3">
+                                <p>{student.presentDays} present / {student.totalDays} marked</p>
+                                <p className="mt-0.5 text-xs text-slate-500">{student.absentDays} absent · {student.leaveDays} leave</p>
+                              </td>
+                              <td className="px-4 py-3 text-right font-semibold text-rose-700">{Number(student.attendancePercent.toFixed(1))}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
+
+            <section>
+              <div className="mb-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Past sessions</p>
+                <h3 className="mt-1 font-display text-xl font-bold text-navy">Attendance history</h3>
+              </div>
+              <div className="mb-4 inline-flex rounded-xl bg-slate-200/70 p-1" aria-label="Filter attendance history by session">
+                {["morning", "evening"].map((value) => (
+                  <button key={value} type="button" aria-pressed={historySession === value} onClick={() => setHistorySession(value)} className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${historySession === value ? "bg-white text-navy shadow-sm" : "text-slate-600 hover:text-navy"}`}>
+                    {sessionLabel(value)}
+                  </button>
+                ))}
+              </div>
+              {historyClasses.filter((item) => item.session === historySession).length ? (
+                <div className="grid gap-4 lg:grid-cols-2">
+                  {historyClasses.filter((item) => item.session === historySession).map(renderClassCard)}
+                </div>
+              ) : (
+                <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-5 py-10 text-center text-sm text-slate-500">
+                  No {historySession} attendance history yet.
+                </div>
+              )}
+            </section>
+          </>
+        )}
+      </div>
     </DashboardLayout>
   );
 };
