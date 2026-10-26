@@ -47,8 +47,8 @@ const Topbar = ({ onMenuClick, title }) => {
             {user?.name?.[0]?.toUpperCase() || "U"}
           </div>
           <div className="hidden sm:block leading-tight">
-            <p className="text-sm font-semibold text-navy dark:text-white">{user?.name}</p>
-            <p className="text-xs text-slate-400 capitalize">{role}</p>
+            <p className="dashboard-user-name text-sm font-semibold">{user?.name}</p>
+            <p className="dashboard-user-role text-xs capitalize">{role}</p>
           </div>
         </div>
 

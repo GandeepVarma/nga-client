@@ -3021,6 +3021,14 @@ body,
   visibility: visible !important;
 }
 
+.admin-topbar .dashboard-user-name {
+  color: #FFFFFF !important;
+}
+
+.admin-topbar .dashboard-user-role {
+  color: #DBEAFE !important;
+}
+
 .home-page-shell .hero-title strong {
   background-image: none;
   color: #244A76;
