@@ -679,6 +679,7 @@ const AttendanceManagement = () => {
               <div className="mb-4">
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Past sessions</p>
                 <h3 className="mt-1 font-display text-xl font-bold text-navy">Attendance history</h3>
+                <p className="mt-1 text-sm text-slate-500">Sessions with attendance marked are shown for 7 days.</p>
               </div>
               <div className="mb-4 inline-flex rounded-xl bg-slate-200/70 p-1" aria-label="Filter attendance history by session">
                 {["morning", "evening"].map((value) => (

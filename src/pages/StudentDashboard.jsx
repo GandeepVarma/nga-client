@@ -61,15 +61,15 @@ const StudentDashboard = () => {
         <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">Your timetable</p>
-            <h3 className="mt-1 font-display font-semibold text-navy dark:text-white">Upcoming Classes</h3>
+            <h3 className="mt-1 font-display font-semibold text-navy dark:text-white">Classes &amp; Recent Attendance</h3>
           </div>
           <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-            {data.upcomingClasses?.length || 0} scheduled
+            {data.upcomingClasses?.length || 0} sessions
           </span>
         </div>
         {!data.upcomingClasses?.length ? (
           <p className="rounded-2xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500">
-            No upcoming classes scheduled for your class and batch.
+            No upcoming classes or recently completed sessions.
           </p>
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -85,6 +85,20 @@ const StudentDashboard = () => {
                   <FaClock aria-hidden="true" />
                   {scheduledClass.session === "morning" ? "Morning" : "Evening"} session
                 </span>
+                {scheduledClass.attendanceStatus && (
+                  <div className={`mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold ${
+                    scheduledClass.attendanceStatus === "Present"
+                      ? "text-emerald-700 dark:text-emerald-400"
+                      : scheduledClass.attendanceStatus === "Absent"
+                        ? "text-red-700 dark:text-red-400"
+                        : "text-amber-700 dark:text-amber-400"
+                  }`}>
+                    <span>Session completed</span>
+                    <span className="rounded-full bg-white/80 px-2.5 py-1 dark:bg-navy">
+                      {scheduledClass.attendanceStatus}
+                    </span>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
