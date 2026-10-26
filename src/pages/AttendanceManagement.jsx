@@ -81,6 +81,8 @@ const AttendanceManagement = () => {
   const [reportSession, setReportSession] = useState("all");
   const [lowAttendanceStudents, setLowAttendanceStudents] = useState(null);
   const [reportLoading, setReportLoading] = useState(false);
+  const [dailyAbsentees, setDailyAbsentees] = useState(null);
+  const [absenteesLoading, setAbsenteesLoading] = useState(false);
 
   const classes = useMemo(
     () => [...new Set(students.map((student) => student.class).filter(Boolean))].sort(classOrder.compare),
@@ -265,6 +267,44 @@ const AttendanceManagement = () => {
     XLSX.writeFile(workbook, `attendance-below-75-${period}-${session}.xlsx`);
   };
 
+  const generateDailyAbsentees = async () => {
+    setAbsenteesLoading(true);
+    setDailyAbsentees(null);
+    try {
+      const date = localDateString(new Date());
+      const [morningResponse, eveningResponse] = await Promise.all(
+        ["morning", "evening"].map((session) =>
+          api.get("/attendance", { params: { date, status: "Absent", session } })
+        )
+      );
+      setDailyAbsentees({
+        date,
+        morning: morningResponse.data.data || [],
+        evening: eveningResponse.data.data || [],
+      });
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Could not generate today's absentees list");
+    } finally {
+      setAbsenteesLoading(false);
+    }
+  };
+
+  const downloadDailyAbsentees = (session) => {
+    const records = dailyAbsentees?.[session];
+    if (!records?.length) return;
+    const rows = records.map((record) => ({
+      "Student ID": record.student?.studentId || "",
+      "Student Name": record.student?.name || "",
+      Class: record.class,
+      Batch: record.student?.batch || "No batch",
+      Date: localDateString(dateFromApi(record.date)),
+    }));
+    const sheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, sheet, `${sessionLabel(session)} Absentees`);
+    XLSX.writeFile(workbook, `absentees-${session}-${dailyAbsentees.date}.xlsx`);
+  };
+
   const renderClassCard = (item) => {
     const present = item.attendance?.Present || 0;
     const absent = item.attendance?.Absent || 0;
@@ -314,6 +354,70 @@ const AttendanceManagement = () => {
               <span>{students.length} active students</span>
             </div>
           </div>
+        </section>
+
+        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-card sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-rose-600">Daily report</p>
+              <h3 className="mt-1 font-display text-xl font-bold text-navy">Today’s absentees by session</h3>
+              <p className="mt-1 text-sm text-slate-500">Generate separate lists for morning and evening sessions.</p>
+            </div>
+            <button type="button" className="btn-primary min-h-11 rounded-2xl px-4" disabled={absenteesLoading} onClick={generateDailyAbsentees}>
+              {absenteesLoading ? "Generating..." : "Generate lists"}
+            </button>
+          </div>
+          {dailyAbsentees && (
+          <div className="mt-5 grid gap-5 lg:grid-cols-2">
+            {["morning", "evening"].map((session) => {
+              const records = dailyAbsentees[session];
+              return (
+                <div key={session} className="rounded-2xl border border-slate-200 p-4">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h4 className="font-semibold text-navy">{sessionLabel(session)} session</h4>
+                      <p className="text-sm text-slate-500">
+                        {records.length} absent record{records.length === 1 ? "" : "s"} · {formatDate(dailyAbsentees.date)}
+                      </p>
+                    </div>
+                    {records.length > 0 && (
+                      <button type="button" className="btn-secondary flex items-center gap-2 px-3 py-2 text-sm" onClick={() => downloadDailyAbsentees(session)}>
+                        <FaFileExcel aria-hidden="true" /> Download
+                      </button>
+                    )}
+                  </div>
+                  {records.length === 0 ? (
+                    <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+                      No students marked absent in the {session} session.
+                    </p>
+                  ) : (
+                    <div className="max-h-[24rem] overflow-auto rounded-xl border border-slate-100">
+                      <table className="w-full min-w-[420px] text-left text-sm">
+                        <thead className="sticky top-0 bg-slate-50 text-slate-600">
+                          <tr>
+                            <th className="px-4 py-3 font-semibold">Student</th>
+                            <th className="px-4 py-3 font-semibold">Class / Batch</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {records.map((record) => (
+                            <tr key={record._id}>
+                              <td className="px-4 py-3">
+                                <p className="font-semibold text-navy">{record.student?.name || "Unknown student"}</p>
+                                <p className="mt-0.5 text-xs text-slate-500">{record.student?.studentId || ""}</p>
+                              </td>
+                              <td className="px-4 py-3">{record.class} · {record.student?.batch || "No batch"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          )}
         </section>
 
         <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-card sm:p-6">
