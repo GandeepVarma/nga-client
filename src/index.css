@@ -52,6 +52,10 @@ img, svg {
     @apply inline-flex items-center justify-center rounded-full border border-[#0f1f3d] bg-white px-5 py-3 font-semibold text-[#0f1f3d] transition hover:bg-[#f8f5ef];
   }
 
+  .btn-outline {
+    @apply inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-navy hover:bg-slate-50 hover:text-navy disabled:cursor-not-allowed disabled:opacity-40;
+  }
+
   .primary-button,
   .secondary-button,
   .header-link,

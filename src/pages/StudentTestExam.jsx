@@ -125,6 +125,7 @@ const StudentTestExam = () => {
 
   const q = test.questions[current];
   const qAnswer = answers[q._id] || { selectedOption: null, markedForReview: false };
+  const questionText = typeof q.questionText === "string" ? q.questionText.trim() : "";
 
   const setAnswer = (selectedOption) => setAnswers((prev) => ({ ...prev, [q._id]: { ...prev[q._id], selectedOption } }));
   const toggleReview = () => setAnswers((prev) => ({ ...prev, [q._id]: { ...prev[q._id], markedForReview: !prev[q._id]?.markedForReview } }));
@@ -154,30 +155,39 @@ const StudentTestExam = () => {
       <div className="flex-1 flex flex-col lg:flex-row gap-5 p-4 lg:p-8">
         <div className="flex-1 card">
           <p className="text-xs text-slate-400 mb-2">Question {current + 1} of {test.questions.length} &middot; {q.marks} mark(s)</p>
-          <p className="text-navy dark:text-white font-medium mb-5"><MathText text={q.questionText} /></p>
+          <div className="mb-6 rounded-xl bg-slate-50 p-4 text-base leading-7 text-navy dark:bg-navy-lighter dark:text-white">
+            <MathText text={questionText || "Question text is missing. Please notify your teacher."} />
+          </div>
 
           <div className="space-y-3 mb-6">
             {q.options.map((opt, i) => (
               <label
                 key={i}
-                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-colors ${
                   qAnswer.selectedOption === i
                     ? "border-gold bg-gold/10"
                     : "border-slate-200 dark:border-navy-lighter hover:bg-slate-50 dark:hover:bg-navy-lighter"
                 }`}
               >
                 <input type="radio" name={`q-${q._id}`} checked={qAnswer.selectedOption === i} onChange={() => setAnswer(i)} />
-                <span className="text-sm text-navy dark:text-white">{String.fromCharCode(65 + i)}. <MathText text={opt} /></span>
+                <span className="text-sm leading-6 text-navy dark:text-white">
+                  <span className="mr-2 font-semibold">{String.fromCharCode(65 + i)}.</span>
+                  <MathText text={typeof opt === "string" && opt.trim() ? opt : "Option text is missing. Please notify your teacher."} />
+                </span>
               </label>
             ))}
           </div>
 
           <div className="flex flex-wrap gap-3">
             <button type="button" onClick={() => setCurrent((c) => Math.max(c - 1, 0))} disabled={current === 0} className="btn-outline disabled:opacity-40">Previous</button>
-            <button type="button" onClick={() => setCurrent((c) => Math.min(c + 1, test.questions.length - 1))} disabled={current === test.questions.length - 1} className="btn-outline disabled:opacity-40">Next</button>
+            {current < test.questions.length - 1 ? (
+              <button type="button" onClick={() => setCurrent((c) => c + 1)} className="btn-outline">Next</button>
+            ) : null}
             <button type="button" onClick={toggleReview} className="btn-outline">{qAnswer.markedForReview ? "Unmark Review" : "Mark for Review"}</button>
             <button type="button" onClick={clearAnswer} className="btn-outline">Clear Answer</button>
-            <button type="button" onClick={() => setShowConfirm(true)} className="btn-primary ml-auto">Submit Test</button>
+            {current === test.questions.length - 1 && (
+              <button type="button" onClick={() => setShowConfirm(true)} className="btn-primary ml-auto">Submit Test</button>
+            )}
           </div>
         </div>
 
