@@ -29,9 +29,9 @@ const StudentOnlineTests = () => {
   return (
     <DashboardLayout title="Online Tests">
       {loading ? (
-        <p className="text-slate-400">Loading tests...</p>
+        <p className="text-slate-700 dark:text-slate-300">Loading tests...</p>
       ) : tests.length === 0 ? (
-        <p className="text-slate-400">No online tests available right now.</p>
+        <p className="text-slate-700 dark:text-slate-300">No online tests available right now.</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {tests.map((t) => (
@@ -40,13 +40,13 @@ const StudentOnlineTests = () => {
                 <h3 className="font-display font-semibold text-navy dark:text-white">{t.title}</h3>
                 <span className={`badge shrink-0 ${statusStyle[t.status]}`}>{t.status}</span>
               </div>
-              <p className="text-sm text-slate-400 mb-3">{t.subject}</p>
+              <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">{t.subject}</p>
               <div className="grid grid-cols-3 gap-2 text-center text-xs mb-4">
-                <div className="bg-slate-50 dark:bg-navy-lighter rounded-lg py-2"><p className="text-slate-400">Questions</p><p className="font-bold text-navy dark:text-white">{t.questionCount}</p></div>
-                <div className="bg-slate-50 dark:bg-navy-lighter rounded-lg py-2"><p className="text-slate-400">Duration</p><p className="font-bold text-navy dark:text-white">{t.duration}m</p></div>
-                <div className="bg-slate-50 dark:bg-navy-lighter rounded-lg py-2"><p className="text-slate-400">Marks</p><p className="font-bold text-navy dark:text-white">{t.totalMarks}</p></div>
+                <div className="bg-slate-50 dark:bg-navy-lighter rounded-lg py-2"><p className="text-slate-600 dark:text-slate-300">Questions</p><p className="font-bold text-navy dark:text-white">{t.questionCount}</p></div>
+                <div className="bg-slate-50 dark:bg-navy-lighter rounded-lg py-2"><p className="text-slate-600 dark:text-slate-300">Duration</p><p className="font-bold text-navy dark:text-white">{t.duration}m</p></div>
+                <div className="bg-slate-50 dark:bg-navy-lighter rounded-lg py-2"><p className="text-slate-600 dark:text-slate-300">Marks</p><p className="font-bold text-navy dark:text-white">{t.totalMarks}</p></div>
               </div>
-              <p className="text-xs text-slate-400 mb-4">
+              <p className="text-xs text-slate-600 dark:text-slate-300 mb-4">
                 Window: {new Date(t.startTime).toLocaleString()} → {new Date(t.endTime).toLocaleString()}
               </p>
               <button

@@ -73,7 +73,6 @@ const OnlineTestBuilder = ({ basePath = "/teacher" }) => {
     negativeMarking: 0,
     randomizeQuestions: false,
     showResults: true,
-    allowReview: true,
     passPercentage: 40,
   });
   const [questions, setQuestions] = useState([emptyQuestion()]);
@@ -130,7 +129,6 @@ const OnlineTestBuilder = ({ basePath = "/teacher" }) => {
           negativeMarking: t.negativeMarking,
           randomizeQuestions: t.randomizeQuestions,
           showResults: t.showResults,
-          allowReview: t.allowReview,
           passPercentage: t.passPercentage,
         });
         setQuestions(t.questions.length > 0 ? t.questions : [emptyQuestion()]);
@@ -374,7 +372,6 @@ const OnlineTestBuilder = ({ basePath = "/teacher" }) => {
           <div className="flex flex-wrap gap-6 pt-1">
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.randomizeQuestions} onChange={(e) => setForm({ ...form, randomizeQuestions: e.target.checked })} /> Randomize question order</label>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.showResults} onChange={(e) => setForm({ ...form, showResults: e.target.checked })} /> Show results immediately</label>
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.allowReview} onChange={(e) => setForm({ ...form, allowReview: e.target.checked })} /> Allow answer review</label>
           </div>
         </div>
 

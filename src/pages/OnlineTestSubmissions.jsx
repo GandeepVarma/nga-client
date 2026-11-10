@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { FaArrowLeft } from "react-icons/fa";
+import { FaArrowLeft, FaEye, FaTimes } from "react-icons/fa";
 import DashboardLayout from "../components/DashboardLayout";
+import OnlineTestAnswerReview from "../components/OnlineTestAnswerReview";
 import api from "../api/axios";
 
 const OnlineTestSubmissions = ({ basePath = "/teacher" }) => {
@@ -11,6 +12,9 @@ const OnlineTestSubmissions = ({ basePath = "/teacher" }) => {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [reviewingSubmission, setReviewingSubmission] = useState(null);
+  const [reviewData, setReviewData] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
   const limit = 15;
 
   const fetchSubmissions = useCallback(async () => {
@@ -29,6 +33,26 @@ const OnlineTestSubmissions = ({ basePath = "/teacher" }) => {
   useEffect(() => {
     fetchSubmissions();
   }, [fetchSubmissions]);
+
+  const openReview = async (submission) => {
+    setReviewingSubmission(submission);
+    setReviewData(null);
+    setReviewLoading(true);
+    try {
+      const response = await api.get(`/online-tests/${id}/submissions/${submission.student._id}/review`);
+      setReviewData(response.data.data);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Could not load answer review");
+      setReviewingSubmission(null);
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  const closeReview = () => {
+    setReviewingSubmission(null);
+    setReviewData(null);
+  };
 
   const totalPages = Math.max(Math.ceil(total / limit), 1);
 
@@ -49,13 +73,14 @@ const OnlineTestSubmissions = ({ basePath = "/teacher" }) => {
               <th className="py-3 px-4">Correct / Wrong / Skipped</th>
               <th className="py-3 px-4">Time Taken</th>
               <th className="py-3 px-4">Status</th>
+              <th className="py-3 px-4">Review</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} className="text-center py-10 text-slate-400">Loading...</td></tr>
+              <tr><td colSpan={8} className="text-center py-10 text-slate-400">Loading...</td></tr>
             ) : submissions.length === 0 ? (
-              <tr><td colSpan={7} className="text-center py-10 text-slate-400">No submissions yet.</td></tr>
+              <tr><td colSpan={8} className="text-center py-10 text-slate-400">No submissions yet.</td></tr>
             ) : (
               submissions.map((s) => (
                 <tr key={s._id} className="border-b border-slate-50 dark:border-navy-lighter/50">
@@ -73,6 +98,17 @@ const OnlineTestSubmissions = ({ basePath = "/teacher" }) => {
                       {!s.submittedAt ? "In Progress" : s.autoSubmitted ? "Auto-submitted" : "Submitted"}
                     </span>
                   </td>
+                  <td className="py-3 px-4">
+                    {s.submittedAt && s.student?._id ? (
+                      <button
+                        type="button"
+                        onClick={() => openReview(s)}
+                        className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-navy hover:bg-slate-50"
+                      >
+                        <FaEye /> Review
+                      </button>
+                    ) : <span className="text-slate-500">-</span>}
+                  </td>
                 </tr>
               ))
             )}
@@ -87,6 +123,31 @@ const OnlineTestSubmissions = ({ basePath = "/teacher" }) => {
               {i + 1}
             </button>
           ))}
+        </div>
+      )}
+
+      {reviewingSubmission && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="submission-answer-review-title">
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-5 shadow-xl dark:bg-navy-light sm:p-7">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 id="submission-answer-review-title" className="font-display text-xl font-bold text-navy dark:text-white">Answer Review</h2>
+                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                  {reviewData?.student?.name || reviewingSubmission.student?.name}
+                  {reviewData?.student?.studentId ? ` (${reviewData.student.studentId})` : ""}
+                  {reviewData && ` · ${reviewData.score} / ${reviewData.totalMarks} marks · ${reviewData.percentage}%`}
+                </p>
+              </div>
+              <button type="button" onClick={closeReview} aria-label="Close answer review" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-navy-lighter">
+                <FaTimes />
+              </button>
+            </div>
+            {reviewLoading ? (
+              <p className="py-10 text-center text-slate-600 dark:text-slate-300">Loading answer review...</p>
+            ) : reviewData ? (
+              <OnlineTestAnswerReview review={reviewData.review} />
+            ) : null}
+          </div>
         </div>
       )}
     </DashboardLayout>

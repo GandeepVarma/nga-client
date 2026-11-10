@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { FaArrowLeft } from "react-icons/fa";
+import { FaArrowLeft, FaEye, FaTimes } from "react-icons/fa";
 import { Bar } from "react-chartjs-2";
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend } from "chart.js";
 import DashboardLayout from "../components/DashboardLayout";
 import StatCard from "../components/StatCard";
+import OnlineTestAnswerReview from "../components/OnlineTestAnswerReview";
 import MathText from "../components/MathText";
 import api from "../api/axios";
 import { FaUsers, FaCheckCircle, FaTimesCircle, FaTrophy } from "react-icons/fa";
@@ -16,10 +17,33 @@ const OnlineTestAnalytics = ({ basePath = "/teacher" }) => {
   const { id } = useParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [reviewingStudent, setReviewingStudent] = useState(null);
+  const [reviewData, setReviewData] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
 
   useEffect(() => {
     api.get(`/online-tests/${id}/analytics`).then((res) => setData(res.data.data)).catch(() => toast.error("Could not load analytics")).finally(() => setLoading(false));
   }, [id]);
+
+  const openReview = async (student) => {
+    setReviewingStudent(student);
+    setReviewData(null);
+    setReviewLoading(true);
+    try {
+      const response = await api.get(`/online-tests/${id}/submissions/${student._id}/review`);
+      setReviewData(response.data.data);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Could not load answer review");
+      setReviewingStudent(null);
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  const closeReview = () => {
+    setReviewingStudent(null);
+    setReviewData(null);
+  };
 
   if (loading) {
     return (
@@ -58,11 +82,12 @@ const OnlineTestAnalytics = ({ basePath = "/teacher" }) => {
                 <th className="py-3 px-4">Class</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4">Score</th>
+                <th className="py-3 px-4">Review</th>
               </tr>
             </thead>
             <tbody>
               {data.studentProgress.length === 0 ? (
-                <tr><td colSpan={5} className="text-center py-8 text-black">No active students are assigned to this test.</td></tr>
+                <tr><td colSpan={6} className="text-center py-8 text-black">No active students are assigned to this test.</td></tr>
               ) : (
                 data.studentProgress.map((student) => (
                   <tr key={student._id} className="border-b border-slate-100 text-black">
@@ -71,6 +96,13 @@ const OnlineTestAnalytics = ({ basePath = "/teacher" }) => {
                     <td className="py-3 px-4 text-black">{student.class || "-"}</td>
                     <td className="py-3 px-4 text-black">{student.status}</td>
                     <td className="py-3 px-4 text-black">{student.percentage == null ? "-" : `${student.percentage}%`}</td>
+                    <td className="py-3 px-4">
+                      {student.status === "Completed" ? (
+                        <button type="button" onClick={() => openReview(student)} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-navy hover:bg-slate-50">
+                          <FaEye /> Review
+                        </button>
+                      ) : <span className="text-slate-500">-</span>}
+                    </td>
                   </tr>
                 ))
               )}
@@ -117,6 +149,33 @@ const OnlineTestAnalytics = ({ basePath = "/teacher" }) => {
           ))}
         </div>
       </div>
+
+      {reviewingStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="answer-review-title">
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-5 text-slate-900 shadow-xl dark:bg-navy-light dark:text-slate-100 sm:p-7">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 id="answer-review-title" className="font-display text-xl font-bold text-navy dark:text-white">Answer Review</h2>
+                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                  {reviewData?.student?.name || reviewingStudent.name}
+                  {reviewData?.student?.studentId ? ` (${reviewData.student.studentId})` : ""}
+                  {reviewData && ` · ${reviewData.score} / ${reviewData.totalMarks} marks · ${reviewData.percentage}%`}
+                </p>
+              </div>
+              <button type="button" onClick={closeReview} aria-label="Close answer review" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-navy-lighter">
+                <FaTimes />
+              </button>
+            </div>
+            {reviewLoading ? (
+              <p className="py-10 text-center text-slate-600 dark:text-slate-300">Loading answer review...</p>
+            ) : (
+              <div className="space-y-5">
+                {reviewData && <OnlineTestAnswerReview review={reviewData.review} />}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 };

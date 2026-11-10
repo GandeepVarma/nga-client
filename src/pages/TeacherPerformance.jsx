@@ -22,8 +22,26 @@ const TeacherPerformance = () => {
   const chartData = {
     labels: performance.map((t) => t.name),
     datasets: [
-      { label: "Students", data: performance.map((t) => t.studentCount), backgroundColor: "#244A76", borderRadius: 6 },
+      { label: "Average score (%)", data: performance.map((t) => t.averageScorePercent), backgroundColor: "#244A76", borderRadius: 6 },
     ],
+  };
+  const chartOptions = {
+    responsive: true,
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 100,
+        ticks: { callback: (value) => `${value}%` },
+      },
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (context) => (context.raw == null ? "No graded results" : `${context.raw}%`),
+        },
+      },
+    },
   };
 
   return (
@@ -35,8 +53,8 @@ const TeacherPerformance = () => {
       ) : (
         <>
           <div className="card mb-6">
-            <h3 className="font-display font-semibold text-navy dark:text-white mb-4">Students per Teacher</h3>
-            <Bar data={chartData} options={{ responsive: true, plugins: { legend: { display: false } } }} />
+            <h3 className="font-display font-semibold text-navy dark:text-white mb-4">Average Test Score by Teacher</h3>
+            <Bar data={chartData} options={chartOptions} />
           </div>
 
           <div className="card p-0 overflow-x-auto">
@@ -45,6 +63,8 @@ const TeacherPerformance = () => {
                 <tr className="text-left text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-navy-lighter">
                   <th className="py-3 px-4">Teacher</th>
                   <th className="py-3 px-4">Students</th>
+                  <th className="py-3 px-4">Tests (regular + online)</th>
+                  <th className="py-3 px-4">Graded Results</th>
                   <th className="py-3 px-4">Average Test Score</th>
                 </tr>
               </thead>
@@ -53,6 +73,8 @@ const TeacherPerformance = () => {
                   <tr key={t.teacherId} className="border-b border-slate-50 dark:border-navy-lighter/50">
                     <td className="py-3 px-4 font-medium text-navy dark:text-white">{t.name}</td>
                     <td className="py-3 px-4">{t.studentCount}</td>
+                    <td className="py-3 px-4">{t.testsCount}</td>
+                    <td className="py-3 px-4">{t.gradedMarks}</td>
                     <td className="py-3 px-4">
                       {t.averageScorePercent !== null ? `${t.averageScorePercent}%` : "No graded tests yet"}
                     </td>

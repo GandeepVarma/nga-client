@@ -22,6 +22,11 @@ const ResultsManagement = () => {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [onlineResults, setOnlineResults] = useState([]);
+  const [onlineResultsPage, setOnlineResultsPage] = useState(1);
+  const [onlineResultsTotal, setOnlineResultsTotal] = useState(0);
+  const [onlineResultsLoading, setOnlineResultsLoading] = useState(true);
+  const onlineResultsLimit = 50;
 
   const fetchResults = useCallback(async () => {
     setLoading(true);
@@ -35,7 +40,23 @@ const ResultsManagement = () => {
     }
   }, []);
 
+  const fetchOnlineResults = useCallback(async () => {
+    setOnlineResultsLoading(true);
+    try {
+      const response = await api.get("/online-tests/results", {
+        params: { page: onlineResultsPage, limit: onlineResultsLimit },
+      });
+      setOnlineResults(response.data.data);
+      setOnlineResultsTotal(response.data.total);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Could not load online test results");
+    } finally {
+      setOnlineResultsLoading(false);
+    }
+  }, [onlineResultsPage]);
+
   useEffect(() => { fetchResults(); }, [fetchResults]);
+  useEffect(() => { fetchOnlineResults(); }, [fetchOnlineResults]);
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setShowForm(true); };
   const openEdit = (result) => {
@@ -123,6 +144,50 @@ const ResultsManagement = () => {
           <div className="flex gap-2 mt-4"><button type="button" onClick={() => openEdit(result)} className="mini-action"><FaEdit /> Edit</button><button type="button" onClick={() => deleteResult(result)} className="mini-action text-red-500"><FaTrash /> Delete</button></div>
         </div>
       </article>)}</div>}
+
+      <section className="mt-10">
+        <div className="mb-4">
+          <h2 className="font-display text-xl font-bold text-navy dark:text-white">Online Test Results</h2>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">Completed online test scores submitted by students.</p>
+        </div>
+        <div className="card overflow-x-auto p-0">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 text-slate-600 dark:border-navy-lighter dark:text-slate-300">
+                <th className="px-4 py-3">Student</th>
+                <th className="px-4 py-3">Test</th>
+                <th className="px-4 py-3">Subject / Class</th>
+                <th className="px-4 py-3">Score</th>
+                <th className="px-4 py-3">Percentage</th>
+                <th className="px-4 py-3">Submitted</th>
+              </tr>
+            </thead>
+            <tbody className="text-slate-900 dark:text-slate-100">
+              {onlineResultsLoading ? (
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">Loading online test results...</td></tr>
+              ) : onlineResults.length === 0 ? (
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">No completed online test results yet.</td></tr>
+              ) : onlineResults.map((result) => (
+                <tr key={result._id} className="border-b border-slate-100 last:border-0 dark:border-navy-lighter/50">
+                  <td className="px-4 py-3 font-medium">{result.student?.name || "Student"}{result.student?.studentId ? ` (${result.student.studentId})` : ""}</td>
+                  <td className="px-4 py-3">{result.test?.title || "Deleted test"}</td>
+                  <td className="px-4 py-3">{result.test ? `${result.test.subject} / ${result.test.class}${result.test.batch ? ` · ${result.test.batch}` : ""}` : "-"}</td>
+                  <td className="px-4 py-3">{result.score ?? "-"} / {result.test?.totalMarks ?? "-"}</td>
+                  <td className="px-4 py-3">{result.percentage ?? "-"}%</td>
+                  <td className="px-4 py-3">{result.submittedAt ? new Date(result.submittedAt).toLocaleString() : "-"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {onlineResultsTotal > onlineResultsLimit && (
+          <div className="mt-4 flex items-center justify-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+            <button type="button" disabled={onlineResultsPage === 1} onClick={() => setOnlineResultsPage((page) => page - 1)} className="btn-outline disabled:opacity-40">Previous</button>
+            <span>Page {onlineResultsPage} of {Math.ceil(onlineResultsTotal / onlineResultsLimit)}</span>
+            <button type="button" disabled={onlineResultsPage >= Math.ceil(onlineResultsTotal / onlineResultsLimit)} onClick={() => setOnlineResultsPage((page) => page + 1)} className="btn-outline disabled:opacity-40">Next</button>
+          </div>
+        )}
+      </section>
     </DashboardLayout>
   );
 };

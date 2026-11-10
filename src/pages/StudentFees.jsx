@@ -15,16 +15,17 @@ const StudentFees = () => {
 
   return (
     <DashboardLayout title="Fee Status">
+      <div className="text-navy dark:text-slate-100">
       {loading ? (
-        <p className="text-slate-400">Loading...</p>
+        <p className="text-slate-700 dark:text-slate-300">Loading...</p>
       ) : fees.length === 0 ? (
-        <p className="text-slate-400">No fee records yet.</p>
+        <p className="text-slate-700 dark:text-slate-300">No fee records yet.</p>
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">
-            <div className="card"><p className="text-slate-500 dark:text-slate-400 text-sm">Current Month</p><p className="font-display text-2xl font-bold text-navy dark:text-white">{current.month}</p></div>
-            <div className="card"><p className="text-slate-500 dark:text-slate-400 text-sm">Pending Amount</p><p className="font-display text-2xl font-bold text-red-500">₹{current.pending}</p></div>
-            <div className="card"><p className="text-slate-500 dark:text-slate-400 text-sm">Carry Forward</p><p className="font-display text-2xl font-bold text-navy dark:text-white">₹{current.carryForward}</p></div>
+            <div className="card"><p className="text-slate-600 dark:text-slate-400 text-sm">Current Month</p><p className="font-display text-2xl font-bold text-navy dark:text-white">{current.month}</p></div>
+            <div className="card"><p className="text-slate-600 dark:text-slate-400 text-sm">Pending Amount</p><p className="font-display text-2xl font-bold text-red-500">₹{current.pending}</p></div>
+            <div className="card"><p className="text-slate-600 dark:text-slate-400 text-sm">Carry Forward</p><p className="font-display text-2xl font-bold text-navy dark:text-white">₹{current.carryForward}</p></div>
           </div>
           <div className="card p-0 overflow-x-auto">
             <table className="w-full text-sm">
@@ -46,6 +47,7 @@ const StudentFees = () => {
           </div>
         </>
       )}
+      </div>
     </DashboardLayout>
   );
 };
