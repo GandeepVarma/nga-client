@@ -177,10 +177,12 @@ const AttendanceManagement = () => {
         session,
         date: scheduleDate,
       });
-      setUpcomingClasses((current) =>
-        [...current, ...response.data.data].sort((a, b) => a.date.localeCompare(b.date) || a.session.localeCompare(b.session))
+      refreshClasses();
+      const skippedCount = response.data.skippedExistingCount || 0;
+      toast.success(
+        `${response.data.data.length} class${response.data.data.length === 1 ? "" : "es"} scheduled successfully.` +
+        (skippedCount ? ` ${skippedCount} already-scheduled class${skippedCount === 1 ? " was" : "es were"} skipped.` : "")
       );
-      toast.success(`${response.data.data.length} class${response.data.data.length === 1 ? "" : "es"} scheduled successfully.`);
     } catch (error) {
       toast.error(error.response?.data?.message || "Could not schedule this class");
     } finally {
@@ -558,7 +560,8 @@ const AttendanceManagement = () => {
         <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-card sm:p-6">
           <div className="mb-5">
             <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">Schedule a session</p>
-            <h3 className="mt-1 font-display text-xl font-bold text-navy">Add an upcoming class</h3>
+            <h3 className="mt-1 font-display text-xl font-bold text-navy">Schedule a class</h3>
+            <p className="mt-1 text-sm text-slate-500">The date defaults to today. Choose an earlier date to add a previous session.</p>
           </div>
           <form onSubmit={scheduleClass} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <div>
@@ -586,7 +589,7 @@ const AttendanceManagement = () => {
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-slate-700" htmlFor="scheduled-date">Date</label>
-              <input id="scheduled-date" type="date" className="input-field" min={todayDateString} value={scheduleDate} onChange={(event) => setScheduleDate(event.target.value)} required />
+              <input id="scheduled-date" type="date" className="input-field" value={scheduleDate} onChange={(event) => setScheduleDate(event.target.value)} required />
             </div>
             <div className="flex items-end sm:col-span-2 lg:col-span-1">
               <button type="submit" className="btn-primary min-h-[46px] w-full rounded-2xl" disabled={scheduling || !classes.length || !batches.length}>
