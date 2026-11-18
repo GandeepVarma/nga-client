@@ -14,6 +14,7 @@ import {
 } from "chart.js";
 import {
   FaArrowRight,
+  FaBell,
   FaBookOpen,
   FaCalendarCheck,
   FaChartLine,
@@ -140,12 +141,15 @@ const AdminDashboard = () => {
   const [testFilter, setTestFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
   const [selectedTestId, setSelectedTestId] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [dashboardQuery, setDashboardQuery] = useState({});
 
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
     setHasError(false);
-    api.get("/admin/dashboard", { signal: controller.signal })
+    api.get("/admin/dashboard", { params: dashboardQuery, signal: controller.signal })
       .then((response) => setStats(response.data.data))
       .catch(() => {
         if (!controller.signal.aborted) {
@@ -157,7 +161,7 @@ const AdminDashboard = () => {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [loadAttempt]);
+  }, [loadAttempt, dashboardQuery]);
 
   const growthRows = useMemo(() => {
     if (!stats) return [];
@@ -346,9 +350,9 @@ const AdminDashboard = () => {
   return (
     <DashboardLayout title="Admin Dashboard">
       {loading ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="dashboard-kpi-grid grid min-w-0 grid-cols-1 gap-4">
           {Array.from({ length: 8 }, (_, index) => <div key={index} className="card h-36 animate-pulse bg-slate-100" />)}
-          <div className="card h-80 animate-pulse bg-slate-100 sm:col-span-2 xl:col-span-4" />
+          <div className="card col-span-full h-80 animate-pulse bg-slate-100" />
         </div>
       ) : hasError ? (
         <div className="card flex min-h-64 flex-col items-center justify-center gap-4 text-center">
@@ -356,17 +360,26 @@ const AdminDashboard = () => {
           <button type="button" className="btn-primary" onClick={() => setLoadAttempt((attempt) => attempt + 1)}>Retry</button>
         </div>
       ) : (
-        <div className="space-y-6">
-          <section className="flex flex-wrap items-end justify-between gap-3">
-            <div>
+        <div className="admin-dashboard-content min-w-0 w-full space-y-6">
+          <section className="flex min-w-0 flex-wrap items-end justify-between gap-3">
+            <div className="min-w-0 flex-1">
               <p className="text-xs font-bold uppercase tracking-wider text-gold-dark">Academy overview</p>
               <h2 className="mt-1 font-display text-2xl font-bold text-navy">Welcome back{user?.name ? `, ${user.name}` : ""}</h2>
               <p className="mt-1 text-sm text-slate-500">A current view of learner progress, attendance, assessments, and fee collection.</p>
             </div>
-            <p className="text-sm font-medium text-slate-500">{new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
+            <div className="flex max-w-full flex-wrap items-end gap-2">
+              <label className="text-xs font-semibold text-slate-500">From
+                <input type="date" className="input-field mt-1 min-w-36 py-2" value={dateFrom} max={dateTo || undefined} onChange={(event) => setDateFrom(event.target.value)} />
+              </label>
+              <label className="text-xs font-semibold text-slate-500">To
+                <input type="date" className="input-field mt-1 min-w-36 py-2" value={dateTo} min={dateFrom || undefined} onChange={(event) => setDateTo(event.target.value)} />
+              </label>
+              <button type="button" className="btn-primary px-4 py-2 text-xs" onClick={() => setDashboardQuery({ ...(dateFrom ? { dateFrom } : {}), ...(dateTo ? { dateTo } : {}) })}>Apply</button>
+              {(dateFrom || dateTo) && <button type="button" className="btn-outline py-2 text-xs" onClick={() => { setDateFrom(""); setDateTo(""); setDashboardQuery({}); }}>Reset</button>}
+            </div>
           </section>
 
-          <section aria-label="Academy key performance indicators" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <section aria-label="Academy key performance indicators" className="dashboard-kpi-grid grid min-w-0 grid-cols-1 gap-4">
             {kpis.map((kpi) => <AnalyticsKpiCard key={kpi.label} {...kpi} />)}
           </section>
 
@@ -508,6 +521,63 @@ const AdminDashboard = () => {
           </section>
 
           <section className="grid min-w-0 grid-cols-1 gap-5 xl:grid-cols-[1.4fr_1fr]">
+            <DashboardAnalyticsPanel title="Upcoming tests" description="Published online tests in the selected dashboard date range.">
+              {(stats.upcomingTests || []).length ? (
+                <div className="space-y-2">
+                  {stats.upcomingTests.map((test) => (
+                    <Link key={test._id} to="/admin/online-tests" className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 px-3 py-3 hover:border-gold hover:bg-gold/5">
+                      <div className="min-w-0"><p className="truncate text-sm font-semibold text-navy">{test.title}</p><p className="mt-1 truncate text-xs text-slate-500">{test.subject} · {test.class}{test.batch ? ` · ${test.batch}` : ""}</p></div>
+                      <time className="shrink-0 text-right text-xs font-semibold text-navy" dateTime={test.startTime}>{new Date(test.startTime).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</time>
+                    </Link>
+                  ))}
+                </div>
+              ) : <EmptyState>No upcoming published online tests match this range.</EmptyState>}
+            </DashboardAnalyticsPanel>
+
+            <DashboardAnalyticsPanel title="Fee due alerts" description="Outstanding fee records with the earliest due dates.">
+              {(stats.feeDueAlerts || []).length ? (
+                <div className="space-y-2">
+                  {stats.feeDueAlerts.map((fee) => (
+                    <Link key={fee._id} to="/admin/fees" className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 px-3 py-3 hover:border-gold hover:bg-gold/5">
+                      <div className="min-w-0"><p className="truncate text-sm font-semibold text-navy">{fee.student?.name || "Student unavailable"}</p><p className="mt-1 truncate text-xs text-slate-500">{fee.month}{fee.student?.class ? ` · ${fee.student.class}` : ""}</p></div>
+                      <div className="shrink-0 text-right"><strong className="block text-sm text-navy">{formatCurrency(fee.pending)}</strong><span className="text-xs text-slate-500">{fee.dueDate ? new Date(fee.dueDate).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "No due date"}</span></div>
+                    </Link>
+                  ))}
+                </div>
+              ) : <EmptyState>No pending fee due alerts found.</EmptyState>}
+            </DashboardAnalyticsPanel>
+          </section>
+
+          <section className="grid min-w-0 grid-cols-1 gap-5 xl:grid-cols-[1.4fr_1fr]">
+            <DashboardAnalyticsPanel title="Absent students" description="Students marked absent today.">
+              {(stats.todaysAbsentStudents || []).length ? (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {stats.todaysAbsentStudents.map((record) => (
+                    <Link key={record._id} to="/admin/attendance" className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 px-3 py-3 hover:border-gold hover:bg-gold/5">
+                      <div className="min-w-0"><p className="truncate text-sm font-semibold text-navy">{record.student.name}</p><p className="mt-1 truncate text-xs text-slate-500">{record.student.studentId}{record.student.class ? ` · ${record.student.class}` : ""}</p></div>
+                      <span className="rounded-full bg-red-50 px-2 py-1 text-xs font-bold text-red-700">Absent</span>
+                    </Link>
+                  ))}
+                </div>
+              ) : <EmptyState>No students are marked absent today.</EmptyState>}
+            </DashboardAnalyticsPanel>
+
+            <DashboardAnalyticsPanel title="Academy notifications" description="Recent WhatsApp and academy notification activity.">
+              {(stats.academyNotifications || []).length ? (
+                <div className="space-y-2">
+                  {stats.academyNotifications.map((notification) => (
+                    <div key={notification._id} className="flex items-start gap-3 rounded-lg border border-slate-100 px-3 py-3">
+                      <FaBell className="mt-1 shrink-0 text-gold-dark" aria-hidden="true" />
+                      <div className="min-w-0 flex-1"><p className="text-xs font-semibold text-navy">{notification.type.replaceAll("_", " ")}</p><p className="mt-1 line-clamp-2 text-xs text-slate-500">{notification.message}</p></div>
+                      <span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-bold ${notification.status === "sent" || notification.status === "delivered" || notification.status === "read" ? "bg-emerald-50 text-emerald-700" : notification.status === "failed" ? "bg-red-50 text-red-700" : "bg-slate-100 text-slate-600"}`}>{notification.status}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : <EmptyState>No academy notifications have been recorded.</EmptyState>}
+            </DashboardAnalyticsPanel>
+          </section>
+
+          <section className="grid min-w-0 grid-cols-1 gap-5 xl:grid-cols-[1.4fr_1fr]">
             <DashboardAnalyticsPanel title="Academy highlights" description="Verified snapshots from the academy records currently available.">
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{highlights.map(([label, value]) => <div key={label} className="rounded-lg border border-slate-100 bg-slate-50/70 p-3"><p className="text-xs text-slate-500">{label}</p><p className="mt-1 font-display text-lg font-bold text-navy">{value}</p></div>)}</div>
             </DashboardAnalyticsPanel>
@@ -515,12 +585,12 @@ const AdminDashboard = () => {
             <DashboardAnalyticsPanel title="Quick actions" description="Shortcuts to existing academy workflows.">
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  ["Add student", "/admin/students", FaUserPlus],
-                  ["Add teacher", "/admin/teachers", FaUserTie],
-                  ["Create test", "/admin/tests", FaClipboardList],
-                  ["Add assignment", "/admin/assignments", FaBookOpen],
-                  ["Record attendance", "/admin/attendance", FaCalendarCheck],
-                  ["Collect fee", "/admin/fees", FaMoneyBillWave],
+                  ["Add Student", "/admin/students", FaUserPlus],
+                  ["Add Teacher", "/admin/teachers", FaUserTie],
+                  ["Mark Attendance", "/admin/attendance", FaCalendarCheck],
+                  ["Create Test", "/admin/tests", FaClipboardList],
+                  ["Record Payment", "/admin/fees", FaMoneyBillWave],
+                  ["Create Assignment", "/admin/assignments", FaBookOpen],
                 ].map(([label, to, Icon]) => <Link key={label} to={to} className="flex min-w-0 items-center gap-2 rounded-lg border border-slate-200 px-3 py-2.5 text-xs font-semibold text-navy transition-colors hover:border-gold hover:bg-gold/10"><Icon className="shrink-0 text-gold-dark" aria-hidden="true" /><span className="truncate">{label}</span><FaPlus className="ml-auto shrink-0 text-[10px]" aria-hidden="true" /></Link>)}
               </div>
             </DashboardAnalyticsPanel>

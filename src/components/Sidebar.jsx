@@ -20,6 +20,9 @@ import {
   FaQuestionCircle,
   FaKey,
   FaChevronDown,
+  FaChevronLeft,
+  FaChevronRight,
+  FaTimes,
 } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 import { PLATFORM_NAME, PLATFORM_TAGLINE } from "../config/branding";
@@ -88,6 +91,14 @@ const Sidebar = ({ open, onClose }) => {
   const { role, user } = useAuth();
   const { pathname } = useLocation();
   const [changesOpen, setChangesOpen] = useState(() => adminChangeLinks.some((item) => item.to === pathname));
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem("nga_sidebar_collapsed") === "true");
+  const toggleCollapsed = () => {
+    setCollapsed((value) => {
+      const next = !value;
+      localStorage.setItem("nga_sidebar_collapsed", String(next));
+      return next;
+    });
+  };
   let links = role === "super_admin" ? superAdminLinks : role === "admin" ? adminLinks : role === "teacher" ? teacherLinks : studentLinks;
   const changeLinks = role === "admin" ? adminChangeLinks : [];
 
@@ -109,15 +120,36 @@ const Sidebar = ({ open, onClose }) => {
       {open && <div className="fixed inset-0 bg-black/40 z-30 lg:hidden" onClick={onClose} />}
 
       <aside
-        className={`admin-sidebar fixed lg:sticky z-40 top-0 left-0 h-full lg:h-screen w-64 shrink-0 bg-navy flex flex-col p-5 transition-transform duration-300 overflow-y-auto ${
+        className={`admin-sidebar fixed lg:sticky z-40 top-0 left-0 h-full lg:h-screen shrink-0 bg-navy flex flex-col p-5 transition-all duration-300 overflow-y-auto ${
           open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        }`}
+        } ${collapsed ? "is-collapsed" : ""}`}
       >
-        <div className="flex items-center gap-3 px-2 mb-8">
-          <img src={ngaLogo} alt="Next GenLearning Academy logo" className="admin-brand-logo w-10 h-10 rounded-xl object-contain shrink-0" />
-          <div className="leading-tight">
-            <p className="font-display font-bold text-white text-sm">{PLATFORM_NAME}</p>
-            {user?.academyName && <p className="text-slate-400 text-xs truncate" title={user.academyName}>{user.academyName}</p>}
+        <div className="admin-sidebar-header mb-8">
+          <div className="admin-sidebar-controls">
+            <button
+              type="button"
+              className="admin-sidebar-mobile-close lg:hidden"
+              onClick={onClose}
+              aria-label="Close navigation"
+            >
+              <FaTimes />
+            </button>
+            <button
+              type="button"
+              className="admin-sidebar-collapse hidden lg:flex"
+              onClick={toggleCollapsed}
+              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {collapsed ? <FaChevronRight /> : <FaChevronLeft />}
+            </button>
+          </div>
+          <div className="admin-sidebar-brand flex items-center gap-3 px-2">
+            <img src={ngaLogo} alt="Next GenLearning Academy logo" className="admin-brand-logo w-10 h-10 rounded-xl object-contain shrink-0" />
+            <div className="leading-tight sidebar-brand-copy">
+              <p className="font-display font-bold text-white text-sm">{PLATFORM_NAME}</p>
+              {user?.academyName && <p className="text-slate-400 text-xs truncate" title={user.academyName}>{user.academyName}</p>}
+            </div>
           </div>
         </div>
 
@@ -136,8 +168,8 @@ const Sidebar = ({ open, onClose }) => {
                     aria-controls="admin-make-changes-menu"
                     onClick={() => setChangesOpen((current) => !current)}
                   >
-                    <span className="flex items-center gap-3"><FaCog /> Make Changes</span>
-                    <FaChevronDown className={`text-xs transition-transform ${changesOpen ? "rotate-180" : ""}`} />
+                    <FaCog /> <span className="sidebar-link-label">Make Changes</span>
+                    <FaChevronDown className={`sidebar-link-chevron text-xs transition-transform ${changesOpen ? "rotate-180" : ""}`} />
                   </button>
                   {changesOpen && (
                     <div id="admin-make-changes-menu" className="mt-1 space-y-1">
@@ -146,9 +178,11 @@ const Sidebar = ({ open, onClose }) => {
                           key={changeTo}
                           to={changeTo}
                           onClick={onClose}
+                          title={collapsed ? changeLabel : undefined}
+                          aria-label={changeLabel}
                           className={({ isActive }) => `sidebar-link pl-8 text-sm ${isActive ? "active" : ""}`}
                         >
-                          <ChangeIcon /> {changeLabel}
+                          <ChangeIcon /> <span className="sidebar-link-label">{changeLabel}</span>
                         </NavLink>
                       ))}
                     </div>
@@ -158,9 +192,11 @@ const Sidebar = ({ open, onClose }) => {
               <NavLink
                 to={to}
                 onClick={onClose}
+                title={collapsed ? label : undefined}
+                aria-label={label}
                 className={({ isActive }) => `sidebar-link ${isActive ? "active" : ""}`}
               >
-                <Icon /> {label}
+                <Icon /> <span className="sidebar-link-label">{label}</span>
               </NavLink>
             </React.Fragment>
           ))}

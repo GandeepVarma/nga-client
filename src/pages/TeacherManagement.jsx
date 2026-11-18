@@ -1,14 +1,23 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
-import { FaPlus, FaEdit, FaKey, FaBan, FaCheckCircle } from "react-icons/fa";
+import { FaPlus, FaEdit, FaKey, FaBan, FaCheckCircle, FaEye, FaTimes } from "react-icons/fa";
 import DashboardLayout from "../components/DashboardLayout";
 import api from "../api/axios";
+import { ActionMenu, ConfirmDialog, EmptyState, Pagination, TableToolbar } from "../components/AdminUi";
 
 const emptyForm = { name: "", email: "", password: "", phone: "" };
 
 const TeacherManagement = () => {
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortField, setSortField] = useState("name");
+  const [sortDirection, setSortDirection] = useState("asc");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [statusTarget, setStatusTarget] = useState(null);
+  const [profileTarget, setProfileTarget] = useState(null);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -71,10 +80,10 @@ const TeacherManagement = () => {
 
   const toggleStatus = async (teacher) => {
     const action = teacher.isActive ? "deactivate" : "activate";
-    if (!confirm(`Are you sure you want to ${action} ${teacher.name}?`)) return;
     try {
       await api.put(`/admin/teachers/${teacher._id}/status`, { isActive: !teacher.isActive });
       toast.success(`Teacher ${action}d`);
+      setStatusTarget(null);
       fetchTeachers();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to update status");
@@ -83,8 +92,8 @@ const TeacherManagement = () => {
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
-    if (newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(newPassword)) {
+      toast.error("Password must be at least 8 characters and include uppercase, lowercase, and a number");
       return;
     }
     try {
@@ -97,13 +106,46 @@ const TeacherManagement = () => {
     }
   };
 
+  const filteredTeachers = useMemo(() => {
+    const filtered = teachers.filter((teacher) => {
+      const matchesSearch = !search || `${teacher.name} ${teacher.email} ${teacher.phone || ""}`.toLowerCase().includes(search.toLowerCase());
+      const matchesStatus = statusFilter === "all" || (statusFilter === "active" ? teacher.isActive : !teacher.isActive);
+      return matchesSearch && matchesStatus;
+    });
+    return [...filtered].sort((a, b) => {
+      const av = sortField === "students" ? a.studentCount || 0 : sortField === "email" ? a.email || "" : a.name || "";
+      const bv = sortField === "students" ? b.studentCount || 0 : sortField === "email" ? b.email || "" : b.name || "";
+      const comparison = typeof av === "number" ? av - bv : av.localeCompare(bv);
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+  }, [search, sortDirection, sortField, statusFilter, teachers]);
+  const totalPages = Math.max(1, Math.ceil(filteredTeachers.length / pageSize));
+  const pagedTeachers = filteredTeachers.slice((page - 1) * pageSize, page * pageSize);
+
   return (
     <DashboardLayout title="Teacher Management">
-      <div className="flex justify-end mb-5">
-        <button onClick={() => setShowAddModal(true)} className="btn-primary flex items-center gap-2">
-          <FaPlus /> Add Teacher
-        </button>
-      </div>
+      <TableToolbar
+        search={search}
+        onSearch={(value) => { setSearch(value); setPage(1); }}
+        searchPlaceholder="Search by name, email or phone..."
+        filters={
+          <>
+            <select className="input-field w-auto min-w-32 py-2.5" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }} aria-label="Filter teacher status">
+              <option value="all">All statuses</option>
+              <option value="active">Active</option>
+              <option value="inactive">Deactivated</option>
+            </select>
+            <select className="input-field w-auto min-w-36 py-2.5" value={`${sortField}:${sortDirection}`} onChange={(event) => { const [field, direction] = event.target.value.split(":"); setSortField(field); setSortDirection(direction); }} aria-label="Sort teachers">
+              <option value="name:asc">Name A-Z</option>
+              <option value="name:desc">Name Z-A</option>
+              <option value="students:desc">Most students</option>
+              <option value="students:asc">Fewest students</option>
+              <option value="email:asc">Email A-Z</option>
+            </select>
+          </>
+        }
+        action={<button onClick={() => setShowAddModal(true)} className="btn-primary flex items-center gap-2"><FaPlus /> Add Teacher</button>}
+      />
 
       <div className="card p-0 overflow-x-auto">
         <table className="w-full text-sm">
@@ -120,10 +162,10 @@ const TeacherManagement = () => {
           <tbody>
             {loading ? (
               <tr><td colSpan={6} className="text-center py-10 text-slate-400">Loading...</td></tr>
-            ) : teachers.length === 0 ? (
-              <tr><td colSpan={6} className="text-center py-10 text-slate-400">No teachers yet. Add one to get started.</td></tr>
+            ) : pagedTeachers.length === 0 ? (
+              <tr><td colSpan={6} className="p-6"><EmptyState title="No teachers found" description="Try changing the search or status filter." action={<button type="button" className="btn-primary" onClick={() => setShowAddModal(true)}>Add Teacher</button>} /></td></tr>
             ) : (
-              teachers.map((t) => (
+              pagedTeachers.map((t) => (
                 <tr key={t._id} className="border-b border-slate-50 dark:border-navy-lighter/50">
                   <td className="py-3 px-4 font-medium text-navy dark:text-white">{t.name}</td>
                   <td className="py-3 px-4">{t.email}</td>
@@ -135,12 +177,16 @@ const TeacherManagement = () => {
                     </span>
                   </td>
                   <td className="py-3 px-4">
-                    <div className="flex items-center justify-end gap-3 text-slate-500">
-                      <button onClick={() => openEdit(t)} title="Edit"><FaEdit className="hover:text-gold" /></button>
-                      <button onClick={() => setResetModal(t)} title="Reset password"><FaKey className="hover:text-blue-500" /></button>
-                      <button onClick={() => toggleStatus(t)} title={t.isActive ? "Deactivate" : "Activate"}>
-                        {t.isActive ? <FaBan className="hover:text-red-500" /> : <FaCheckCircle className="hover:text-emerald-500" />}
-                      </button>
+                    <div className="flex justify-end">
+                      <ActionMenu
+                        label={`Actions for ${t.name}`}
+                        items={[
+                          { label: "View teacher", icon: <FaEye />, onClick: () => setProfileTarget(t) },
+                          { label: "Edit teacher", icon: <FaEdit />, onClick: () => openEdit(t) },
+                          { label: "Reset password", icon: <FaKey />, onClick: () => setResetModal(t) },
+                          { label: t.isActive ? "Deactivate teacher" : "Activate teacher", icon: t.isActive ? <FaBan /> : <FaCheckCircle />, danger: t.isActive, onClick: () => setStatusTarget(t) },
+                        ]}
+                      />
                     </div>
                   </td>
                 </tr>
@@ -149,6 +195,48 @@ const TeacherManagement = () => {
           </tbody>
         </table>
       </div>
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        from={filteredTeachers.length ? (page - 1) * pageSize + 1 : 0}
+        to={Math.min(page * pageSize, filteredTeachers.length)}
+        total={filteredTeachers.length}
+      />
+
+      <ConfirmDialog
+        open={Boolean(statusTarget)}
+        title={statusTarget?.isActive ? "Deactivate teacher?" : "Activate teacher?"}
+        description={statusTarget ? `${statusTarget.name} will be ${statusTarget.isActive ? "prevented from logging in" : "allowed to log in again"}. Assigned student records will be preserved.` : ""}
+        confirmLabel={statusTarget?.isActive ? "Deactivate" : "Activate"}
+        danger={Boolean(statusTarget?.isActive)}
+        onCancel={() => setStatusTarget(null)}
+        onConfirm={() => statusTarget && toggleStatus(statusTarget)}
+      />
+
+      {profileTarget && (
+        <div className="admin-modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setProfileTarget(null)}>
+          <section role="dialog" aria-modal="true" aria-labelledby="teacher-profile-title" className="admin-confirm-dialog max-w-lg">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 id="teacher-profile-title">{profileTarget.name}</h2>
+                <p>{profileTarget.email}</p>
+              </div>
+              <button type="button" className="admin-action-trigger" onClick={() => setProfileTarget(null)} aria-label="Close teacher profile"><FaTimes /></button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-lg bg-slate-50 p-3"><p className="text-xs text-slate-500">Phone</p><p className="mt-1 text-sm font-semibold text-navy">{profileTarget.phone || "-"}</p></div>
+              <div className="rounded-lg bg-slate-50 p-3"><p className="text-xs text-slate-500">Assigned students</p><p className="mt-1 text-sm font-semibold text-navy">{profileTarget.studentCount}</p></div>
+              <div className="rounded-lg bg-slate-50 p-3"><p className="text-xs text-slate-500">Account status</p><p className="mt-1 text-sm font-semibold text-navy">{profileTarget.isActive ? "Active" : "Deactivated"}</p></div>
+              <div className="rounded-lg bg-slate-50 p-3"><p className="text-xs text-slate-500">Joined</p><p className="mt-1 text-sm font-semibold text-navy">{profileTarget.createdAt ? new Date(profileTarget.createdAt).toLocaleDateString() : "-"}</p></div>
+            </div>
+            <div className="admin-confirm-actions mt-5">
+              <button type="button" className="admin-button-secondary" onClick={() => setProfileTarget(null)}>Close</button>
+              <button type="button" className="admin-button-primary" onClick={() => { setProfileTarget(null); openEdit(profileTarget); }}>Edit Teacher</button>
+            </div>
+          </section>
+        </div>
+      )}
 
       {showAddModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
@@ -158,7 +246,7 @@ const TeacherManagement = () => {
               <div><label className="text-sm font-medium block mb-1">Full Name</label><input className="input-field" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
               <div><label className="text-sm font-medium block mb-1">Email</label><input type="email" className="input-field" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
               <div><label className="text-sm font-medium block mb-1">Phone</label><input className="input-field" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
-              <div><label className="text-sm font-medium block mb-1">Temporary Password</label><input type="password" className="input-field" required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
+              <div><label className="text-sm font-medium block mb-1">Temporary Password</label><input type="password" className="input-field" required minLength={8} pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,}" title="Use at least 8 characters with uppercase, lowercase, and a number" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /><p className="text-xs text-slate-500 mt-1">At least 8 characters, including uppercase, lowercase, and a number.</p></div>
               <div className="flex justify-end gap-3 pt-1">
                 <button type="button" className="btn-outline" onClick={() => setShowAddModal(false)}>Cancel</button>
                 <button type="submit" disabled={saving} className="btn-primary">{saving ? "Creating..." : "Create Teacher"}</button>
@@ -192,7 +280,8 @@ const TeacherManagement = () => {
             <form onSubmit={handleResetPassword} className="space-y-4">
               <div>
                 <label className="text-sm font-medium block mb-1">New Password</label>
-                <input type="password" className="input-field" required minLength={6} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                <input type="password" className="input-field" required minLength={8} pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,}" title="Use at least 8 characters with uppercase, lowercase, and a number" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                <p className="text-xs text-slate-500 mt-1">At least 8 characters, including uppercase, lowercase, and a number.</p>
               </div>
               <div className="flex justify-end gap-3 pt-1">
                 <button type="button" className="btn-outline" onClick={() => { setResetModal(null); setNewPassword(""); }}>Cancel</button>

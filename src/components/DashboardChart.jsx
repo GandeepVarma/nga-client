@@ -8,7 +8,7 @@ const DashboardChart = ({ type, data, options, className = "" }) => {
   if (!ChartComponent) return null;
 
   return (
-    <div className={`min-w-0 ${className}`}>
+    <div className={`dashboard-chart-container relative w-full min-w-0 max-w-full ${className}`}>
       <ChartComponent data={data} options={options} />
     </div>
   );

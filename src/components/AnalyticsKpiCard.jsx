@@ -25,10 +25,10 @@ const AnalyticsKpiCard = ({
   return (
     <Link
       to={to}
-      className="admin-analytics-kpi card group flex min-h-36 flex-col justify-between gap-4 p-5 transition duration-200 hover:-translate-y-1 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+      className="admin-analytics-kpi card group flex min-h-36 min-w-0 w-full flex-col justify-between gap-4 p-5 transition duration-200 hover:-translate-y-1 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-slate-500">{label}</p>
           <p className="mt-2 font-display text-2xl font-bold text-navy">{value}</p>
         </div>

@@ -2,65 +2,56 @@ import React from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
-import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 import FeatureRoute from "./components/FeatureRoute";
 
-// Public site (no auth)
-import Home from "./pages/public/Home";
-import Pricing from "./pages/public/Pricing";
-import RegisterAcademy from "./pages/public/RegisterAcademy";
-import AcademyLogin from "./pages/public/AcademyLogin";
-import SuperAdminLogin from "./pages/public/SuperAdminLogin";
-import About from "./pages/public/About";
-import Contact from "./pages/public/Contact";
-import Programs from "./pages/public/Programs";
-import Results from "./pages/public/Results";
-import DigitalHub from "./pages/public/DigitalHub";
-import ChangePassword from "./pages/ChangePassword";
-
-// Admin-only pages
-import AdminDashboard from "./pages/AdminDashboard";
-import TeacherManagement from "./pages/TeacherManagement";
-import AssignStudents from "./pages/AssignStudents";
-import TeacherPerformance from "./pages/TeacherPerformance";
-import FeeManagement from "./pages/FeeManagement";
-import MonthlyEarnings from "./pages/MonthlyEarnings";
-
-// Shared between Admin + Teacher (backend scopes data automatically)
-import StudentManagement from "./pages/StudentManagement";
-import StudentProfile from "./pages/StudentProfile";
-import TestManagement from "./pages/TestManagement";
-import AssignmentManagement from "./pages/AssignmentManagement";
-import AttendanceManagement from "./pages/AttendanceManagement";
-import OnlineTestManagement from "./pages/OnlineTestManagement";
-import OnlineTestBuilder from "./pages/OnlineTestBuilder";
-import OnlineTestAnalytics from "./pages/OnlineTestAnalytics";
-import OnlineTestSubmissions from "./pages/OnlineTestSubmissions";
-import QuestionBank from "./pages/QuestionBank";
-import WhatsAppSettings from "./pages/WhatsAppSettings";
-import WhatsAppLogs from "./pages/WhatsAppLogs";
-import BroadcastMessage from "./pages/BroadcastMessage";
-import SuperAdminDashboard from "./pages/SuperAdminDashboard";
-import AcademyManagement from "./pages/AcademyManagement";
-import AcademyCreate from "./pages/AcademyCreate";
-import AcademyDetails from "./pages/AcademyDetails";
-import ProgramManagement from "./pages/ProgramManagement";
-import ResultsManagement from "./pages/ResultsManagement";
-import StoryManagement from "./pages/StoryManagement";
-import DigitalHubManagement from "./pages/DigitalHubManagement";
-
-// Teacher-only
-import TeacherDashboard from "./pages/TeacherDashboard";
-
-// Student-only
-import StudentDashboard from "./pages/StudentDashboard";
-import StudentTests from "./pages/StudentTests";
-import StudentAssignments from "./pages/StudentAssignments";
-import StudentFees from "./pages/StudentFees";
-import StudentOnlineTests from "./pages/StudentOnlineTests";
-import StudentTestExam from "./pages/StudentTestExam";
-import StudentTestResult from "./pages/StudentTestResult";
+const Login = React.lazy(() => import("./pages/Login"));
+const Home = React.lazy(() => import("./pages/public/Home"));
+const Pricing = React.lazy(() => import("./pages/public/Pricing"));
+const RegisterAcademy = React.lazy(() => import("./pages/public/RegisterAcademy"));
+const AcademyLogin = React.lazy(() => import("./pages/public/AcademyLogin"));
+const SuperAdminLogin = React.lazy(() => import("./pages/public/SuperAdminLogin"));
+const About = React.lazy(() => import("./pages/public/About"));
+const Contact = React.lazy(() => import("./pages/public/Contact"));
+const Programs = React.lazy(() => import("./pages/public/Programs"));
+const Results = React.lazy(() => import("./pages/public/Results"));
+const DigitalHub = React.lazy(() => import("./pages/public/DigitalHub"));
+const ChangePassword = React.lazy(() => import("./pages/ChangePassword"));
+const AdminDashboard = React.lazy(() => import("./pages/AdminDashboard"));
+const TeacherManagement = React.lazy(() => import("./pages/TeacherManagement"));
+const AssignStudents = React.lazy(() => import("./pages/AssignStudents"));
+const TeacherPerformance = React.lazy(() => import("./pages/TeacherPerformance"));
+const FeeManagement = React.lazy(() => import("./pages/FeeManagement"));
+const MonthlyEarnings = React.lazy(() => import("./pages/MonthlyEarnings"));
+const StudentManagement = React.lazy(() => import("./pages/StudentManagement"));
+const StudentProfile = React.lazy(() => import("./pages/StudentProfile"));
+const TestManagement = React.lazy(() => import("./pages/TestManagement"));
+const AssignmentManagement = React.lazy(() => import("./pages/AssignmentManagement"));
+const AttendanceManagement = React.lazy(() => import("./pages/AttendanceManagement"));
+const OnlineTestManagement = React.lazy(() => import("./pages/OnlineTestManagement"));
+const OnlineTestBuilder = React.lazy(() => import("./pages/OnlineTestBuilder"));
+const OnlineTestAnalytics = React.lazy(() => import("./pages/OnlineTestAnalytics"));
+const OnlineTestSubmissions = React.lazy(() => import("./pages/OnlineTestSubmissions"));
+const QuestionBank = React.lazy(() => import("./pages/QuestionBank"));
+const WhatsAppSettings = React.lazy(() => import("./pages/WhatsAppSettings"));
+const WhatsAppLogs = React.lazy(() => import("./pages/WhatsAppLogs"));
+const BroadcastMessage = React.lazy(() => import("./pages/BroadcastMessage"));
+const SuperAdminDashboard = React.lazy(() => import("./pages/SuperAdminDashboard"));
+const AcademyManagement = React.lazy(() => import("./pages/AcademyManagement"));
+const AcademyCreate = React.lazy(() => import("./pages/AcademyCreate"));
+const AcademyDetails = React.lazy(() => import("./pages/AcademyDetails"));
+const ProgramManagement = React.lazy(() => import("./pages/ProgramManagement"));
+const ResultsManagement = React.lazy(() => import("./pages/ResultsManagement"));
+const StoryManagement = React.lazy(() => import("./pages/StoryManagement"));
+const DigitalHubManagement = React.lazy(() => import("./pages/DigitalHubManagement"));
+const TeacherDashboard = React.lazy(() => import("./pages/TeacherDashboard"));
+const StudentDashboard = React.lazy(() => import("./pages/StudentDashboard"));
+const StudentTests = React.lazy(() => import("./pages/StudentTests"));
+const StudentAssignments = React.lazy(() => import("./pages/StudentAssignments"));
+const StudentFees = React.lazy(() => import("./pages/StudentFees"));
+const StudentOnlineTests = React.lazy(() => import("./pages/StudentOnlineTests"));
+const StudentTestExam = React.lazy(() => import("./pages/StudentTestExam"));
+const StudentTestResult = React.lazy(() => import("./pages/StudentTestResult"));
 
 function App() {
   const location = useLocation();
@@ -69,7 +60,8 @@ function App() {
     <>
       <Toaster position="top-right" toastOptions={{ duration: 3500 }} />
       <div className="route-page-shell" key={location.pathname}>
-        <Routes location={location}>
+        <React.Suspense fallback={<div className="min-h-[40vh] flex items-center justify-center text-slate-500">Loading page...</div>}>
+          <Routes location={location}>
           {/* ---------------- PUBLIC SOFTWARE WEBSITE ---------------- */}
           <Route path="/" element={<Home />} />
           <Route path="/pricing" element={<Pricing />} />
@@ -144,7 +136,8 @@ function App() {
           <Route path="/student/online-tests/:id/result" element={<ProtectedRoute allowedRoles={["student"]}><StudentTestResult /></ProtectedRoute>} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+          </Routes>
+        </React.Suspense>
       </div>
     </>
   );

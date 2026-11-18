@@ -11,7 +11,6 @@ import {
   FaTrash,
   FaUsers,
 } from "react-icons/fa";
-import * as XLSX from "xlsx";
 import DashboardLayout from "../components/DashboardLayout";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
@@ -38,8 +37,18 @@ const localDateString = (date) => {
   return `${year}-${month}-${day}`;
 };
 
+const getMonthDateRange = (monthValue) => {
+  const [year, month] = monthValue.split("-").map(Number);
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return {
+    startDate: `${monthValue}-01`,
+    endDate: `${monthValue}-${String(lastDay).padStart(2, "0")}`,
+  };
+};
+
 const today = new Date();
 const todayDateString = localDateString(today);
+const currentMonth = todayDateString.slice(0, 7);
 
 const dateFromApi = (value) => {
   const [year, month, day] = value.slice(0, 10).split("-").map(Number);
@@ -86,6 +95,14 @@ const AttendanceManagement = () => {
   const [reportLoading, setReportLoading] = useState(false);
   const [dailyAbsentees, setDailyAbsentees] = useState(null);
   const [absenteesLoading, setAbsenteesLoading] = useState(false);
+  const [attendanceMonth, setAttendanceMonth] = useState(currentMonth);
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState(todayDateString);
+  const [attendanceClassFilter, setAttendanceClassFilter] = useState(ALL_CLASSES);
+  const [attendanceBatchFilter, setAttendanceBatchFilter] = useState(ALL_BATCHES);
+  const [monthlyAttendance, setMonthlyAttendance] = useState([]);
+  const [monthlyAttendanceLoading, setMonthlyAttendanceLoading] = useState(false);
+  const [monthlyAttendanceError, setMonthlyAttendanceError] = useState(false);
+  const [monthlyAttendanceRefreshCount, setMonthlyAttendanceRefreshCount] = useState(0);
 
   const classes = useMemo(
     () => [...new Set(students.map((student) => student.class).filter(Boolean))].sort(classOrder.compare),
@@ -96,6 +113,12 @@ const AttendanceManagement = () => {
       .filter((student) => className === ALL_CLASSES || student.class === className)
       .map((student) => student.batch?.trim() || ""))].sort(classOrder.compare),
     [className, students]
+  );
+  const attendanceBatches = useMemo(
+    () => [...new Set(students
+      .filter((student) => attendanceClassFilter === ALL_CLASSES || student.class === attendanceClassFilter)
+      .map((student) => student.batch?.trim() || ""))].sort(classOrder.compare),
+    [attendanceClassFilter, students]
   );
   const upcomingBatches = useMemo(() => {
     const groups = new Map();
@@ -130,6 +153,38 @@ const AttendanceManagement = () => {
     [attendanceByStudent, roster]
   );
   const activeClassNames = [...new Set(activeClasses.map((scheduledClass) => scheduledClass.class))];
+  const filteredMonthlyAttendance = useMemo(
+    () => monthlyAttendance.filter((record) =>
+      attendanceBatchFilter === ALL_BATCHES ||
+      (record.student?.batch?.trim() || "") === attendanceBatchFilter
+    ),
+    [attendanceBatchFilter, monthlyAttendance]
+  );
+  const monthlyRecordsByDate = useMemo(() => filteredMonthlyAttendance.reduce((dates, record) => {
+    const date = localDateString(dateFromApi(record.date));
+    dates[date] = dates[date] || [];
+    dates[date].push(record);
+    return dates;
+  }, {}), [filteredMonthlyAttendance]);
+  const selectedDateRecords = monthlyRecordsByDate[selectedCalendarDate] || [];
+  const selectedDateSummary = selectedDateRecords.reduce(
+    (counts, record) => {
+      if (Object.prototype.hasOwnProperty.call(counts, record.status)) counts[record.status] += 1;
+      return counts;
+    },
+    { Present: 0, Absent: 0, Leave: 0 }
+  );
+  const markedDays = Object.keys(monthlyRecordsByDate).length;
+  const monthParts = attendanceMonth.split("-").map(Number);
+  const calendarDays = Array.from(
+    { length: new Date(monthParts[0], monthParts[1], 0).getDate() },
+    (_, index) => index + 1
+  );
+  const calendarStartOffset = new Date(monthParts[0], monthParts[1] - 1, 1).getDay();
+  const maxDailyRecords = Math.max(
+    1,
+    ...Object.values(monthlyRecordsByDate).map((records) => records.length)
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -137,8 +192,8 @@ const AttendanceManagement = () => {
     setLoadError(false);
     Promise.all([
       api.get("/students", { signal: controller.signal }),
-      api.get("/attendance/sessions", { params: { period: "upcoming" }, signal: controller.signal }),
-      api.get("/attendance/sessions", { params: { period: "history" }, signal: controller.signal }),
+      api.get("/attendance/sessions", { params: { period: "upcoming", date: todayDateString }, signal: controller.signal }),
+      api.get("/attendance/sessions", { params: { period: "history", date: todayDateString }, signal: controller.signal }),
     ])
       .then(([studentResponse, upcomingResponse, historyResponse]) => {
         const activeStudents = (studentResponse.data.data || []).filter((student) => student.status === "Active");
@@ -162,6 +217,38 @@ const AttendanceManagement = () => {
   useEffect(() => {
     if (batch !== ALL_BATCHES && !batches.includes(batch)) setBatch(ALL_BATCHES);
   }, [batch, batches]);
+
+  useEffect(() => {
+    if (attendanceBatchFilter !== ALL_BATCHES && !attendanceBatches.includes(attendanceBatchFilter)) {
+      setAttendanceBatchFilter(ALL_BATCHES);
+    }
+  }, [attendanceBatchFilter, attendanceBatches]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const { startDate, endDate } = getMonthDateRange(attendanceMonth);
+    setMonthlyAttendanceLoading(true);
+    setMonthlyAttendanceError(false);
+    api.get("/attendance", {
+      params: {
+        startDate,
+        endDate,
+        ...(attendanceClassFilter !== ALL_CLASSES ? { class: attendanceClassFilter } : {}),
+      },
+      signal: controller.signal,
+    })
+      .then((response) => setMonthlyAttendance(response.data.data || []))
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setMonthlyAttendanceError(true);
+          toast.error("Could not load monthly attendance");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setMonthlyAttendanceLoading(false);
+      });
+    return () => controller.abort();
+  }, [attendanceClassFilter, attendanceMonth, monthlyAttendanceRefreshCount, refreshCount]);
 
   const refreshClasses = () => setRefreshCount((count) => count + 1);
 
@@ -313,27 +400,32 @@ const AttendanceManagement = () => {
     }
   };
 
-  const downloadLowAttendanceReport = () => {
+  const downloadLowAttendanceReport = async () => {
     if (!lowAttendanceStudents) return;
-    const rows = lowAttendanceStudents.map((student) => ({
-      "Student ID": student.studentId,
-      "Student Name": student.name,
-      Class: student.class,
-      Batch: student.batch || "No batch",
-      "Present Sessions": student.presentDays,
-      "Absent Sessions": student.absentDays,
-      "Leave Sessions": student.leaveDays,
-      "Total Marked Sessions": student.totalDays,
-      "Attendance (%)": Number(student.attendancePercent.toFixed(2)),
-    }));
-    const sheet = XLSX.utils.json_to_sheet(rows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, sheet, "Below 75 Attendance");
-    const period = getReportPeriodLabel(reportPeriod, reportYear, reportMonth, reportQuarter)
-      .replace(/[^a-z0-9]+/gi, "-")
-      .replace(/^-|-$/g, "");
-    const session = reportSession === "all" ? "all-sessions" : `${reportSession}-session`;
-    XLSX.writeFile(workbook, `attendance-below-75-${period}-${session}.xlsx`);
+    try {
+      const XLSX = await import("xlsx");
+      const rows = lowAttendanceStudents.map((student) => ({
+        "Student ID": student.studentId,
+        "Student Name": student.name,
+        Class: student.class,
+        Batch: student.batch || "No batch",
+        "Present Sessions": student.presentDays,
+        "Absent Sessions": student.absentDays,
+        "Leave Sessions": student.leaveDays,
+        "Total Marked Sessions": student.totalDays,
+        "Attendance (%)": Number(student.attendancePercent.toFixed(2)),
+      }));
+      const sheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, sheet, "Below 75 Attendance");
+      const period = getReportPeriodLabel(reportPeriod, reportYear, reportMonth, reportQuarter)
+        .replace(/[^a-z0-9]+/gi, "-")
+        .replace(/^-|-$/g, "");
+      const session = reportSession === "all" ? "all-sessions" : `${reportSession}-session`;
+      XLSX.writeFile(workbook, `attendance-below-75-${period}-${session}.xlsx`);
+    } catch (error) {
+      toast.error(error.message || "Could not export the attendance report");
+    }
   };
 
   const generateDailyAbsentees = async () => {
@@ -358,20 +450,47 @@ const AttendanceManagement = () => {
     }
   };
 
-  const downloadDailyAbsentees = (session) => {
+  const downloadDailyAbsentees = async (session) => {
     const records = dailyAbsentees?.[session];
     if (!records?.length) return;
-    const rows = records.map((record) => ({
-      "Student ID": record.student?.studentId || "",
-      "Student Name": record.student?.name || "",
-      Class: record.class,
-      Batch: record.student?.batch || "No batch",
-      Date: localDateString(dateFromApi(record.date)),
-    }));
-    const sheet = XLSX.utils.json_to_sheet(rows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, sheet, `${sessionLabel(session)} Absentees`);
-    XLSX.writeFile(workbook, `absentees-${session}-${dailyAbsentees.date}.xlsx`);
+    try {
+      const XLSX = await import("xlsx");
+      const rows = records.map((record) => ({
+        "Student ID": record.student?.studentId || "",
+        "Student Name": record.student?.name || "",
+        Class: record.class,
+        Batch: record.student?.batch || "No batch",
+        Date: localDateString(dateFromApi(record.date)),
+      }));
+      const sheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, sheet, `${sessionLabel(session)} Absentees`);
+      XLSX.writeFile(workbook, `absentees-${session}-${dailyAbsentees.date}.xlsx`);
+    } catch (error) {
+      toast.error(error.message || "Could not export the absentees report");
+    }
+  };
+
+  const downloadMonthlyAttendance = async () => {
+    if (!filteredMonthlyAttendance.length) return;
+    try {
+      const XLSX = await import("xlsx");
+      const rows = filteredMonthlyAttendance.map((record) => ({
+        Date: localDateString(dateFromApi(record.date)),
+        "Student ID": record.student?.studentId || "",
+        "Student Name": record.student?.name || "",
+        Class: record.class,
+        Batch: record.student?.batch || "No batch",
+        Session: sessionLabel(record.session),
+        Status: record.status,
+      }));
+      const sheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, sheet, "Attendance");
+      XLSX.writeFile(workbook, `attendance-${attendanceMonth}.xlsx`);
+    } catch (error) {
+      toast.error(error.message || "Could not export the attendance report");
+    }
   };
 
   const renderClassCard = (item) => {
@@ -554,6 +673,225 @@ const AttendanceManagement = () => {
               );
             })}
           </div>
+          )}
+        </section>
+
+        <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-card sm:p-6">
+          <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+            <div>
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-blue-600">
+                <FaChartBar aria-hidden="true" /> Attendance overview
+              </p>
+              <h3 className="mt-1 font-display text-xl font-bold text-navy">Monthly attendance</h3>
+              <p className="mt-1 text-sm text-slate-500">Calendar and reports use saved attendance records for the selected filters.</p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <label className="text-sm font-medium text-slate-600">
+                Month
+                <input
+                  type="month"
+                  className="input-field mt-1"
+                  value={attendanceMonth}
+                  onChange={(event) => {
+                    if (!event.target.value) return;
+                    setAttendanceMonth(event.target.value);
+                    setSelectedCalendarDate(`${event.target.value}-01`);
+                  }}
+                  aria-label="Attendance calendar month"
+                />
+              </label>
+              <label className="text-sm font-medium text-slate-600">
+                Class
+                <select
+                  className="input-field mt-1"
+                  value={attendanceClassFilter}
+                  onChange={(event) => setAttendanceClassFilter(event.target.value)}
+                >
+                  <option value={ALL_CLASSES}>All classes</option>
+                  {classes.map((value) => <option key={value} value={value}>{value}</option>)}
+                </select>
+              </label>
+              <label className="text-sm font-medium text-slate-600">
+                Batch
+                <select
+                  className="input-field mt-1"
+                  value={attendanceBatchFilter}
+                  onChange={(event) => setAttendanceBatchFilter(event.target.value)}
+                >
+                  <option value={ALL_BATCHES}>All batches</option>
+                  {attendanceBatches.map((value, index) => (
+                    <option key={`${value}-${index}`} value={value}>{value || "No batch"}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </div>
+
+          {monthlyAttendanceLoading ? (
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              {[0, 1, 2].map((item) => <div key={item} className="h-20 animate-pulse rounded-2xl bg-slate-100" />)}
+              <div className="h-72 animate-pulse rounded-2xl bg-slate-100 sm:col-span-2" />
+              <div className="h-72 animate-pulse rounded-2xl bg-slate-100" />
+            </div>
+          ) : monthlyAttendanceError ? (
+            <div className="mt-5 rounded-2xl border border-rose-100 bg-rose-50 p-5 text-center">
+              <p className="text-sm text-rose-700">Monthly attendance could not be loaded.</p>
+              <button type="button" className="btn-secondary mt-3 px-4 py-2" onClick={() => setMonthlyAttendanceRefreshCount((count) => count + 1)}>Retry</button>
+            </div>
+          ) : (
+            <>
+              <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {[
+                  ["Recorded sessions", filteredMonthlyAttendance.length, "text-navy"],
+                  ["Days with records", markedDays, "text-blue-700"],
+                  ["Present", filteredMonthlyAttendance.filter((record) => record.status === "Present").length, "text-emerald-700"],
+                  [
+                    "Present of marked",
+                    `${filteredMonthlyAttendance.length
+                      ? Math.round((filteredMonthlyAttendance.filter((record) => record.status === "Present").length / filteredMonthlyAttendance.length) * 100)
+                      : 0}%`,
+                    "text-navy",
+                  ],
+                ].map(([label, value, color]) => (
+                  <div key={label} className="rounded-2xl bg-slate-50 px-4 py-3">
+                    <p className="text-xs text-slate-500">{label}</p>
+                    <p className={`mt-1 text-xl font-bold ${color}`}>{value}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-5 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+                <div className="rounded-2xl border border-slate-200 p-3 sm:p-4">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <h4 className="font-semibold text-navy">
+                      {new Date(`${attendanceMonth}-01T00:00:00`).toLocaleDateString(undefined, { month: "long", year: "numeric" })}
+                    </h4>
+                    <span className="text-xs text-slate-500">Select a day to view its records</span>
+                  </div>
+                  <div className="grid grid-cols-7 gap-1 text-center text-xs">
+                    {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+                      <div key={day} className="py-2 font-semibold text-slate-500">{day}</div>
+                    ))}
+                    {Array.from({ length: calendarStartOffset }, (_, index) => (
+                      <div key={`empty-${index}`} aria-hidden="true" />
+                    ))}
+                    {calendarDays.map((day) => {
+                      const date = `${attendanceMonth}-${String(day).padStart(2, "0")}`;
+                      const records = monthlyRecordsByDate[date] || [];
+                      const presentCount = records.filter((record) => record.status === "Present").length;
+                      const selected = date === selectedCalendarDate;
+                      return (
+                        <button
+                          key={date}
+                          type="button"
+                          aria-pressed={selected}
+                          aria-label={`${date}${records.length ? `, ${records.length} attendance records` : ", no attendance records"}`}
+                          onClick={() => setSelectedCalendarDate(date)}
+                          className={`min-h-[58px] rounded-xl border p-1 transition hover:border-blue-300 hover:bg-blue-50 ${selected ? "border-blue-500 bg-blue-50 text-navy" : "border-transparent text-slate-700"}`}
+                        >
+                          <span className="font-semibold">{day}</span>
+                          {records.length > 0 && (
+                            <span className="mt-1 block truncate text-[10px] leading-4 text-blue-700">
+                              {presentCount}/{records.length} present
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <h4 className="font-semibold text-navy">Daily trend</h4>
+                      <p className="mt-1 text-xs text-slate-500">Marked student records per day</p>
+                    </div>
+                    <span className="text-xs text-slate-500">{markedDays} days</span>
+                  </div>
+                  {markedDays ? (
+                    <div className="mt-4 max-h-64 space-y-3 overflow-y-auto pr-1">
+                      {Object.entries(monthlyRecordsByDate).sort(([first], [second]) => second.localeCompare(first)).map(([date, records]) => {
+                        const presentCount = records.filter((record) => record.status === "Present").length;
+                        const width = Math.max(4, (records.length / maxDailyRecords) * 100);
+                        return (
+                          <button
+                            key={date}
+                            type="button"
+                            onClick={() => setSelectedCalendarDate(date)}
+                            className="w-full text-left"
+                            aria-label={`View ${date}: ${presentCount} present out of ${records.length} marked`}
+                          >
+                            <div className="mb-1 flex justify-between gap-2 text-xs">
+                              <span className="text-slate-600">{formatDate(date)}</span>
+                              <span className="font-semibold text-navy">{presentCount}/{records.length} present</span>
+                            </div>
+                            <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                              <div className="h-full rounded-full bg-blue-500" style={{ width: `${width}%` }} />
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="mt-5 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-8 text-center text-sm text-slate-500">
+                      No attendance records in this month.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-slate-200">
+                <div className="flex flex-col justify-between gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center">
+                  <div>
+                    <h4 className="font-semibold text-navy">Attendance report</h4>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {formatDate(selectedCalendarDate)} · {selectedDateRecords.length} marked record{selectedDateRecords.length === 1 ? "" : "s"}
+                      {selectedDateRecords.length > 0 && ` · ${selectedDateSummary.Present} present · ${selectedDateSummary.Absent} absent · ${selectedDateSummary.Leave} on leave`}
+                    </p>
+                  </div>
+                  {filteredMonthlyAttendance.length > 0 && (
+                    <button type="button" className="btn-secondary flex w-full items-center justify-center gap-2 px-4 py-2.5 text-sm sm:w-auto" onClick={downloadMonthlyAttendance}>
+                      <FaFileExcel aria-hidden="true" /> Export month
+                    </button>
+                  )}
+                </div>
+                {selectedDateRecords.length ? (
+                  <div className="max-h-80 overflow-auto">
+                    <table className="w-full min-w-[560px] text-left text-sm">
+                      <thead className="sticky top-0 bg-slate-50 text-slate-600">
+                        <tr>
+                          <th className="px-4 py-3 font-semibold">Student</th>
+                          <th className="px-4 py-3 font-semibold">Class / Batch</th>
+                          <th className="px-4 py-3 font-semibold">Session</th>
+                          <th className="px-4 py-3 font-semibold">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {selectedDateRecords.map((record) => (
+                          <tr key={record._id}>
+                            <td className="px-4 py-3">
+                              <p className="font-semibold text-navy">{record.student?.name || "Unknown student"}</p>
+                              <p className="mt-0.5 text-xs text-slate-500">{record.student?.studentId || ""}</p>
+                            </td>
+                            <td className="px-4 py-3">{record.class} · {record.student?.batch || "No batch"}</td>
+                            <td className="px-4 py-3">{record.session ? sessionLabel(record.session) : "—"}</td>
+                            <td className="px-4 py-3">
+                              <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${record.status === "Present" ? "bg-emerald-50 text-emerald-700" : record.status === "Absent" ? "bg-rose-50 text-rose-700" : "bg-amber-50 text-amber-700"}`}>
+                                {record.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="px-4 py-8 text-center text-sm text-slate-500">
+                    No attendance records for this day and filter. Choose another date or class.
+                  </p>
+                )}
+              </div>
+            </>
           )}
         </section>
 

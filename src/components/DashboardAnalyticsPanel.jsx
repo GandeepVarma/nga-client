@@ -7,7 +7,7 @@ const DashboardAnalyticsPanel = ({ title, description, actions, children, classN
         <h2 className="font-display text-base font-semibold text-navy">{title}</h2>
         {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
       </div>
-      {actions && <div className="min-w-0 max-w-full flex-wrap justify-end gap-2">{actions}</div>}
+      {actions && <div className="flex min-w-0 max-w-full flex-wrap justify-end gap-2">{actions}</div>}
     </header>
     <div className="mt-5 min-w-0">{children}</div>
   </section>

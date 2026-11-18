@@ -9,9 +9,9 @@ const DashboardLayout = ({ title, children }) => {
   const subscription = user?.academy;
 
   return (
-    <div className="admin-shell flex min-h-screen bg-slate-50 dark:bg-navy">
+    <div className="admin-shell flex min-h-screen w-full min-w-0 max-w-full bg-slate-50 dark:bg-navy">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col">
         <Topbar title={title} onMenuClick={() => setSidebarOpen(true)} />
         {subscription && subscription.subscriptionStatus !== "active" && (
           <div className="mx-4 mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
@@ -22,7 +22,7 @@ const DashboardLayout = ({ title, children }) => {
                 : "Your academy subscription is suspended. Please contact support."}
           </div>
         )}
-        <main className="admin-main flex-1 p-4 lg:p-8">{children}</main>
+        <main className="admin-main min-w-0 w-full flex-1 p-4 lg:p-8">{children}</main>
       </div>
     </div>
   );

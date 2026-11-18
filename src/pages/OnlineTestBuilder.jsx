@@ -5,7 +5,6 @@ import { FaPlus, FaTrash, FaCopy, FaArrowUp, FaArrowDown, FaSave, FaPaste, FaTim
 import DashboardLayout from "../components/DashboardLayout";
 import MathText from "../components/MathText";
 import api from "../api/axios";
-import * as XLSX from "xlsx";
 
 const emptyQuestion = () => ({
   questionText: "",
@@ -15,7 +14,11 @@ const emptyQuestion = () => ({
   explanation: "",
 });
 
-const toLocalInput = (iso) => (iso ? new Date(iso).toISOString().slice(0, 16) : "");
+const toLocalInput = (iso) => {
+  if (!iso) return "";
+  const date = new Date(iso);
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+};
 
 const parseBulkQuestions = (source) => {
   const lines = source.split(/\r?\n/);
@@ -247,17 +250,22 @@ const OnlineTestBuilder = ({ basePath = "/teacher" }) => {
   const readSpreadsheet = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
-    const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" });
-    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: "" });
-    const required = ["Question", "Option A", "Option B", "Option C", "Option D", "Answer"];
-    setSpreadsheetRows(rows.map((row) => {
-      const answer = String(row.Answer || "").trim().toUpperCase();
-      const question = { questionText: String(row.Question || "").trim(), options: ["Option A", "Option B", "Option C", "Option D"].map((field) => String(row[field] || "").trim()), correctOption: /^[A-D]$/.test(answer) ? answer.charCodeAt(0) - 65 : 0, marks: Number(row.Marks || 1), explanation: "" };
-      question.errors = required.filter((field) => !String(row[field] || "").trim()).map((field) => `Missing ${field}`);
-      if (!/^[A-D]$/.test(answer)) question.errors.push("Invalid answer");
-      if (!Number.isFinite(question.marks) || question.marks < 0.5) question.errors.push("Invalid marks");
-      return question;
-    }));
+    try {
+      const XLSX = await import("xlsx");
+      const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" });
+      const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: "" });
+      const required = ["Question", "Option A", "Option B", "Option C", "Option D", "Answer"];
+      setSpreadsheetRows(rows.map((row) => {
+        const answer = String(row.Answer || "").trim().toUpperCase();
+        const question = { questionText: String(row.Question || "").trim(), options: ["Option A", "Option B", "Option C", "Option D"].map((field) => String(row[field] || "").trim()), correctOption: /^[A-D]$/.test(answer) ? answer.charCodeAt(0) - 65 : 0, marks: Number(row.Marks || 1), explanation: "" };
+        question.errors = required.filter((field) => !String(row[field] || "").trim()).map((field) => `Missing ${field}`);
+        if (!/^[A-D]$/.test(answer)) question.errors.push("Invalid answer");
+        if (!Number.isFinite(question.marks) || question.marks < 0.5) question.errors.push("Invalid marks");
+        return question;
+      }));
+    } catch (error) {
+      toast.error(error.message || "Could not read the spreadsheet");
+    }
   };
   const importSpreadsheet = () => {
     if (!spreadsheetRows.length || spreadsheetRows.some((row) => row.errors.length)) { toast.error("Fix all invalid spreadsheet rows before importing"); return; }
@@ -276,9 +284,14 @@ const OnlineTestBuilder = ({ basePath = "/teacher" }) => {
     next.errors = errors;
     return next;
   }));
-  const downloadTemplate = () => {
-    const sheet = XLSX.utils.aoa_to_sheet([["Question", "Option A", "Option B", "Option C", "Option D", "Answer", "Marks", "Difficulty", "Subject", "Chapter"], ["What is 25 + 35?", "25", "50", "60", "70", "C", 1, "Easy", "Mathematics", "Addition"]]);
-    const book = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(book, sheet, "Questions"); XLSX.writeFile(book, "nextgen-question-template.xlsx");
+  const downloadTemplate = async () => {
+    try {
+      const XLSX = await import("xlsx");
+      const sheet = XLSX.utils.aoa_to_sheet([["Question", "Option A", "Option B", "Option C", "Option D", "Answer", "Marks", "Difficulty", "Subject", "Chapter"], ["What is 25 + 35?", "25", "50", "60", "70", "C", 1, "Easy", "Mathematics", "Addition"]]);
+      const book = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(book, sheet, "Questions"); XLSX.writeFile(book, "nextgen-question-template.xlsx");
+    } catch (error) {
+      toast.error(error.message || "Could not download the question template");
+    }
   };
   const moveQuestion = (index, dir) => {
     setQuestions((prev) => {
@@ -361,7 +374,7 @@ const OnlineTestBuilder = ({ basePath = "/teacher" }) => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div><label className="text-sm font-medium block mb-1">Start Date & Time</label><input type="datetime-local" className="input-field" required value={form.startTime} onChange={(e) => setForm({ ...form, startTime: e.target.value })} /></div>
-            <div><label className="text-sm font-medium block mb-1">End Date & Time</label><input type="datetime-local" className="input-field" required value={form.endTime} onChange={(e) => setForm({ ...form, endTime: e.target.value })} /></div>
+            <div><label className="text-sm font-medium block mb-1">End Date & Time</label><input type="datetime-local" min={form.startTime || undefined} className="input-field" required value={form.endTime} onChange={(e) => setForm({ ...form, endTime: e.target.value })} /></div>
           </div>
 
           <div>

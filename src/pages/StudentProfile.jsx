@@ -91,12 +91,24 @@ const StudentProfile = ({ basePath = "/teacher" }) => {
       </div>
 
       {tab === "Personal" && (
-        <div className="card grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-          <Info label="Parent Name" value={p.parentName} />
-          <Info label="Phone Number" value={p.phone} />
-          <Info label="Date of Joining" value={new Date(p.dateOfJoining).toDateString()} />
-          <Info label="Batch" value={p.batch || "-"} />
-          <Info label="Status" value={p.status} />
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <section className="card grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+            <Info label="Student ID" value={p.studentId} />
+            <Info label="Full Name" value={p.name} />
+            <Info label="Class" value={p.class} />
+            <Info label="Batch" value={p.batch || "-"} />
+            <Info label="Status" value={p.status} />
+            <Info label="Preferred Language" value={p.preferredLanguage || "-"} />
+            <Info label="Date of Joining" value={p.dateOfJoining ? new Date(p.dateOfJoining).toDateString() : "-"} />
+          </section>
+          <section className="card grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+            <Info label="Parent Name" value={p.parentName} />
+            <Info label="Primary Phone" value={p.phone} />
+            <Info label="Parent WhatsApp" value={p.parentWhatsapp || "-"} />
+            <Info label="Student WhatsApp" value={p.studentWhatsapp || "-"} />
+            <Info label="Monthly Fee" value={p.monthlyFee != null ? `₹${p.monthlyFee}` : "-"} />
+            <Info label="Admission Fee" value={p.admissionFee != null ? `₹${p.admissionFee}` : "-"} />
+          </section>
         </div>
       )}
 

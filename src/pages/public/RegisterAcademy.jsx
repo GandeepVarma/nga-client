@@ -72,7 +72,7 @@ const RegisterAcademy = () => {
               <div><label className="text-sm font-medium block mb-1">Owner Name</label><input className="input-field" required value={form.ownerName} onChange={(e) => setForm({ ...form, ownerName: e.target.value })} /></div>
               <div><label className="text-sm font-medium block mb-1">Owner Email</label><input type="email" className="input-field" required value={form.ownerEmail} onChange={(e) => setForm({ ...form, ownerEmail: e.target.value })} /></div>
               <div><label className="text-sm font-medium block mb-1">Phone</label><input className="input-field" required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
-              <div><label className="text-sm font-medium block mb-1">Choose a Password</label><input type="password" className="input-field" required minLength={6} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
+              <div><label className="text-sm font-medium block mb-1">Choose a Password</label><input type="password" className="input-field" required minLength={8} pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,}" title="Use at least 8 characters with uppercase, lowercase, and a number" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /><p className="text-xs text-slate-500 mt-1">At least 8 characters, including uppercase, lowercase, and a number.</p></div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
               <div><label className="text-sm font-medium block mb-1">City</label><input className="input-field" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>

@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { FaPlus, FaSearch, FaEdit, FaTrash, FaEye, FaTimes, FaFileExcel, FaChartBar } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaEye, FaTimes, FaFileExcel, FaChartBar } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import * as XLSX from "xlsx";
 import DashboardLayout from "../components/DashboardLayout";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
+import { ActionMenu, ConfirmDialog, EmptyState, Pagination, TableToolbar } from "../components/AdminUi";
 
 const emptyForm = {
   studentId: "",
@@ -56,6 +56,13 @@ const StudentManagement = ({ basePath = "/teacher" }) => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] = useState("");
+  const [batchFilter, setBatchFilter] = useState("");
+  const [sortField, setSortField] = useState("createdAt");
+  const [sortDirection, setSortDirection] = useState("desc");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
@@ -98,6 +105,10 @@ const StudentManagement = ({ basePath = "/teacher" }) => {
     const debounce = setTimeout(fetchStudents, 300);
     return () => clearTimeout(debounce);
   }, [fetchStudents]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, classFilter, batchFilter]);
 
   useEffect(() => {
     if (isAdmin) {
@@ -261,10 +272,10 @@ const StudentManagement = ({ basePath = "/teacher" }) => {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Delete this student? This cannot be undone.")) return;
     try {
       await api.delete(`/students/${id}`);
       toast.success("Student deleted");
+      setDeleteTarget(null);
       fetchStudents();
     } catch (err) {
       toast.error(err.response?.data?.message || "Delete failed");
@@ -287,57 +298,141 @@ const StudentManagement = ({ basePath = "/teacher" }) => {
     }
   };
 
-  const downloadLowAttendanceReport = () => {
+  const downloadLowAttendanceReport = async () => {
     if (!lowAttendanceStudents) return;
-    const rows = lowAttendanceStudents.map((student) => ({
+    try {
+      const XLSX = await import("xlsx");
+      const rows = lowAttendanceStudents.map((student) => ({
+        "Student ID": student.studentId,
+        "Student Name": student.name,
+        Class: student.class,
+        "Present Days": student.presentDays,
+        "Total Marked Days": student.totalDays,
+        "Attendance (%)": Number(student.attendancePercent.toFixed(2)),
+      }));
+      const sheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, sheet, "Low Attendance");
+      const filePeriod = getReportPeriodLabel(reportPeriod, reportYear, reportMonth, reportQuarter).replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "");
+      XLSX.writeFile(workbook, `low-attendance-${filePeriod}.xlsx`);
+    } catch (error) {
+      toast.error(error.message || "Could not export the low attendance report");
+    }
+  };
+
+  const classOptions = useMemo(() => [...new Set(students.map((student) => student.class).filter(Boolean))].sort(), [students]);
+  const batchOptions = useMemo(() => [...new Set(students.map((student) => student.batch).filter(Boolean))].sort(), [students]);
+  const visibleStudents = useMemo(() => {
+    const filtered = students.filter((student) =>
+      (!classFilter || student.class === classFilter)
+      && (!batchFilter || (student.batch || "") === batchFilter)
+    );
+    return [...filtered].sort((a, b) => {
+      const av = sortField === "name" ? a.name || "" : sortField === "studentId" ? a.studentId || "" : sortField === "class" ? a.class || "" : a.createdAt || "";
+      const bv = sortField === "name" ? b.name || "" : sortField === "studentId" ? b.studentId || "" : sortField === "class" ? b.class || "" : b.createdAt || "";
+      const comparison = typeof av === "string" && typeof bv === "string"
+        ? av.localeCompare(bv)
+        : new Date(av) - new Date(bv);
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+  }, [batchFilter, classFilter, sortDirection, sortField, students]);
+  const totalPages = Math.max(1, Math.ceil(visibleStudents.length / pageSize));
+  const pagedStudents = visibleStudents.slice((page - 1) * pageSize, page * pageSize);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const toggleSelected = (id) => {
+    setSelectedIds((current) => current.includes(id) ? current.filter((value) => value !== id) : [...current, id]);
+  };
+  const toggleAllVisible = () => {
+    const visibleIds = pagedStudents.map((student) => student._id);
+    const allSelected = visibleIds.every((id) => selectedIds.includes(id));
+    setSelectedIds((current) => allSelected
+      ? current.filter((id) => !visibleIds.includes(id))
+      : [...new Set([...current, ...visibleIds])]);
+  };
+  const exportStudents = async (format = "xlsx") => {
+    const exportRows = (selectedIds.length
+      ? visibleStudents.filter((student) => selectedIds.includes(student._id))
+      : visibleStudents
+    ).map((student) => ({
       "Student ID": student.studentId,
-      "Student Name": student.name,
+      Name: student.name,
+      "Parent Name": student.parentName,
+      Phone: student.phone,
+      "Parent WhatsApp": student.parentWhatsapp || "",
+      "Student WhatsApp": student.studentWhatsapp || "",
       Class: student.class,
-      "Present Days": student.presentDays,
-      "Total Marked Days": student.totalDays,
-      "Attendance (%)": Number(student.attendancePercent.toFixed(2)),
+      Batch: student.batch || "",
+      "Monthly Fee": student.monthlyFee,
+      "Admission Fee": student.admissionFee,
+      Teacher: student.assignedTeacher?.name || "",
+      Status: student.status,
     }));
-    const sheet = XLSX.utils.json_to_sheet(rows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, sheet, "Low Attendance");
-    const filePeriod = getReportPeriodLabel(reportPeriod, reportYear, reportMonth, reportQuarter).replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "");
-    XLSX.writeFile(workbook, `low-attendance-${filePeriod}.xlsx`);
+    if (!exportRows.length) {
+      toast.error("No students to export");
+      return;
+    }
+    try {
+      const XLSX = await import("xlsx");
+      const sheet = XLSX.utils.json_to_sheet(exportRows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, sheet, "Students");
+      if (format === "csv") {
+        XLSX.writeFile(workbook, "students.csv", { bookType: "csv" });
+      } else {
+        XLSX.writeFile(workbook, "students.xlsx");
+      }
+    } catch (error) {
+      toast.error(error.message || "Could not export students");
+    }
   };
 
   return (
     <DashboardLayout title={isAdmin ? "All Students" : "My Students"}>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-        <div className="flex flex-1 gap-3">
-          <div className="relative flex-1 max-w-sm">
-            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
-            <input
-              className="input-field pl-9"
-              placeholder="Search by name, ID or phone..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <input
-            className="input-field max-w-[160px]"
-            placeholder="Filter by class"
-            value={classFilter}
-            onChange={(e) => setClassFilter(e.target.value)}
-          />
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => { setLowAttendanceStudents(null); setShowLowAttendanceReport(true); }} className="btn-outline flex items-center gap-2 shrink-0">
-            <FaChartBar aria-hidden="true" /> Low Attendance Report
-          </button>
-          <button onClick={openAddModal} className="btn-primary flex items-center gap-2 shrink-0">
-            <FaPlus /> Add Student
-          </button>
-        </div>
-      </div>
+      <TableToolbar
+        search={search}
+        onSearch={setSearch}
+        searchPlaceholder="Search by name, ID or phone..."
+        filters={
+          <>
+            <select className="input-field w-auto min-w-32 py-2.5" value={classFilter} onChange={(event) => setClassFilter(event.target.value)} aria-label="Filter by class">
+              <option value="">All classes</option>
+              {classOptions.map((className) => <option key={className}>{className}</option>)}
+            </select>
+            <select className="input-field w-auto min-w-32 py-2.5" value={batchFilter} onChange={(event) => setBatchFilter(event.target.value)} aria-label="Filter by batch">
+              <option value="">All batches</option>
+              {batchOptions.map((batch) => <option key={batch}>{batch}</option>)}
+            </select>
+            <select className="input-field w-auto min-w-36 py-2.5" value={`${sortField}:${sortDirection}`} onChange={(event) => { const [field, direction] = event.target.value.split(":"); setSortField(field); setSortDirection(direction); }} aria-label="Sort students">
+              <option value="createdAt:desc">Newest first</option>
+              <option value="createdAt:asc">Oldest first</option>
+              <option value="name:asc">Name A-Z</option>
+              <option value="name:desc">Name Z-A</option>
+              <option value="studentId:asc">Student ID ascending</option>
+              <option value="studentId:desc">Student ID descending</option>
+              <option value="class:asc">Class ascending</option>
+            </select>
+          </>
+        }
+        action={
+          <>
+            {selectedIds.length > 0 && <span className="text-xs font-semibold text-navy">{selectedIds.length} selected</span>}
+            <button type="button" onClick={() => exportStudents("xlsx")} className="btn-outline flex items-center gap-2"><FaFileExcel /> Excel</button>
+            <button type="button" onClick={() => exportStudents("csv")} className="btn-outline">CSV</button>
+            <button type="button" onClick={() => { setLowAttendanceStudents(null); setShowLowAttendanceReport(true); }} className="btn-outline flex items-center gap-2"><FaChartBar /> Report</button>
+            <button onClick={openAddModal} className="btn-primary flex items-center gap-2"><FaPlus /> Add Student</button>
+          </>
+        }
+      />
 
       <div className="card p-0 overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-navy-lighter">
+              <th className="w-12 py-3 px-4"><input type="checkbox" aria-label="Select all visible students" checked={pagedStudents.length > 0 && pagedStudents.every((student) => selectedIds.includes(student._id))} onChange={toggleAllVisible} /></th>
               <th className="py-3 px-4">Student ID</th>
               <th className="py-3 px-4">Name</th>
               <th className="py-3 px-4">Class</th>
@@ -350,12 +445,13 @@ const StudentManagement = ({ basePath = "/teacher" }) => {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={isAdmin ? 8 : 6} className="text-center py-10 text-slate-400">Loading students...</td></tr>
-            ) : students.length === 0 ? (
-              <tr><td colSpan={isAdmin ? 8 : 6} className="text-center py-10 text-slate-400">No students found.</td></tr>
+              <tr><td colSpan={isAdmin ? 9 : 7} className="text-center py-10 text-slate-400"><div className="mx-auto max-w-sm"><div className="h-3 animate-pulse rounded bg-slate-100" /><div className="mt-2 h-3 animate-pulse rounded bg-slate-100" /></div></td></tr>
+            ) : pagedStudents.length === 0 ? (
+              <tr><td colSpan={isAdmin ? 9 : 7} className="p-6"><EmptyState title="No students found" description="Try changing your search or filters." /></td></tr>
             ) : (
-              students.map((s) => (
+              pagedStudents.map((s) => (
                 <tr key={s._id} className="border-b border-slate-50 dark:border-navy-lighter/50 hover:bg-slate-50 dark:hover:bg-navy-lighter/40">
+                  <td className="py-3 px-4"><input type="checkbox" aria-label={`Select ${s.name}`} checked={selectedIds.includes(s._id)} onChange={() => toggleSelected(s._id)} /></td>
                   <td className="py-3 px-4 font-medium text-navy dark:text-white">{s.studentId}</td>
                   <td className="py-3 px-4">{s.name}</td>
                   <td className="py-3 px-4">{s.class}</td>
@@ -383,17 +479,25 @@ const StudentManagement = ({ basePath = "/teacher" }) => {
                     </span>
                   </td>
                   <td className="py-3 px-4">
-                    <div className="flex items-center justify-end gap-3 text-slate-500">
-                      <Link to={`${basePath}/students/${s._id}`} title="View profile">
-                        <FaEye className="hover:text-blue-500" />
-                      </Link>
-                      <button onClick={() => openEditModal(s)} title="Edit">
-                        <FaEdit className="hover:text-gold" />
-                      </button>
-                      <button onClick={() => handleDelete(s._id)} title="Delete">
-                        <FaTrash className="hover:text-red-500" />
-                      </button>
+                    <div className="flex justify-end">
+                      <ActionMenu
+                        label={`Actions for ${s.name}`}
+                        items={[
+                          { label: "View profile", icon: <FaEye />, onClick: () => window.location.assign(`${basePath}/students/${s._id}`) },
+                          { label: "Edit student", icon: <FaEdit />, onClick: () => openEditModal(s) },
+                          { label: "Delete student", icon: <FaTrash />, danger: true, onClick: () => setDeleteTarget(s) },
+                        ]}
+                      />
                     </div>
+                    <ConfirmDialog
+                      open={Boolean(deleteTarget)}
+                      title="Delete student?"
+                      description={deleteTarget ? `${deleteTarget.name} (${deleteTarget.studentId}) will be permanently deleted. This action cannot be undone.` : ""}
+                      confirmLabel="Delete Student"
+                      danger
+                      onCancel={() => setDeleteTarget(null)}
+                      onConfirm={() => deleteTarget && handleDelete(deleteTarget._id)}
+                    />
                   </td>
                 </tr>
               ))
@@ -401,6 +505,14 @@ const StudentManagement = ({ basePath = "/teacher" }) => {
           </tbody>
         </table>
       </div>
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        from={visibleStudents.length ? (page - 1) * pageSize + 1 : 0}
+        to={Math.min(page * pageSize, visibleStudents.length)}
+        total={visibleStudents.length}
+      />
 
       {showModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
@@ -471,7 +583,8 @@ const StudentManagement = ({ basePath = "/teacher" }) => {
                 <label className="text-sm font-medium">
                   {editingId ? "New Password (leave blank to keep current)" : "Password"}
                 </label>
-                <input type="password" className="input-field mt-1" required={!editingId} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+                <input type="password" className="input-field mt-1" required={!editingId} minLength={8} pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,}" title="Use at least 8 characters with uppercase, lowercase, and a number" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+                <p className="text-xs text-slate-500 mt-1">At least 8 characters, including uppercase, lowercase, and a number.</p>
               </div>
 
               <div className="col-span-2 flex justify-end gap-3 mt-2">
