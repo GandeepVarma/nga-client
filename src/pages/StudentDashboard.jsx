@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { Link } from "react-router-dom";
 import { Line } from "react-chartjs-2";
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend } from "chart.js";
 import DashboardLayout from "../components/DashboardLayout";
@@ -51,7 +52,13 @@ const StudentDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
-        <StatCard icon={FaCalendarCheck} label="Attendance" value={`${data.attendancePercentage}%`} accent="bg-emerald-500/15 text-emerald-500" />
+        <Link
+          to="/student/attendance"
+          aria-label="View attendance details"
+          className="block rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+        >
+          <StatCard icon={FaCalendarCheck} label="Attendance" value={`${data.attendancePercentage}%`} accent="bg-emerald-500/15 text-emerald-500" />
+        </Link>
         <StatCard icon={FaClipboardList} label="Upcoming Tests" value={data.upcomingTests.length} accent="bg-navy/15 text-navy" />
         <StatCard icon={FaBookOpen} label="Pending Assignments" value={data.pendingAssignmentsCount} accent="bg-amber-500/15 text-amber-500" />
         <StatCard icon={FaMoneyBillWave} label="Fee Pending" value={`₹${data.feeStatus?.pending ?? 0}`} accent="bg-red-500/15 text-red-500" />

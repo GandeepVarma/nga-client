@@ -46,6 +46,7 @@ const StoryManagement = React.lazy(() => import("./pages/StoryManagement"));
 const DigitalHubManagement = React.lazy(() => import("./pages/DigitalHubManagement"));
 const TeacherDashboard = React.lazy(() => import("./pages/TeacherDashboard"));
 const StudentDashboard = React.lazy(() => import("./pages/StudentDashboard"));
+const StudentAttendance = React.lazy(() => import("./pages/StudentAttendance"));
 const StudentTests = React.lazy(() => import("./pages/StudentTests"));
 const StudentAssignments = React.lazy(() => import("./pages/StudentAssignments"));
 const StudentFees = React.lazy(() => import("./pages/StudentFees"));
@@ -128,6 +129,7 @@ function App() {
 
           {/* ---------------- STUDENT ---------------- */}
           <Route path="/student/dashboard" element={<ProtectedRoute allowedRoles={["student"]}><StudentDashboard /></ProtectedRoute>} />
+          <Route path="/student/attendance" element={<ProtectedRoute allowedRoles={["student"]}><StudentAttendance /></ProtectedRoute>} />
           <Route path="/student/tests" element={<ProtectedRoute allowedRoles={["student"]}><StudentTests /></ProtectedRoute>} />
           <Route path="/student/assignments" element={<ProtectedRoute allowedRoles={["student"]}><StudentAssignments /></ProtectedRoute>} />
           <Route path="/student/fees" element={<ProtectedRoute allowedRoles={["student"]}><StudentFees /></ProtectedRoute>} />

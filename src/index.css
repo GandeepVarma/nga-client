@@ -3835,8 +3835,7 @@ body,
     width: auto;
   }
 
-  .admin-profile-chevron,
-  .admin-profile-button + div {
+  .admin-profile-chevron {
     display: none;
   }
 
@@ -3922,4 +3921,59 @@ body,
     transition: none !important;
     animation: none !important;
   }
+}
+
+/* Dashboard surfaces stay light, so dark-mode utility colors must retain light-theme contrast. */
+.admin-main [class~="dark:text-white"],
+.admin-main [class~="dark:text-slate-100"] {
+  color: #172033 !important;
+}
+
+.admin-main [class~="dark:text-slate-200"],
+.admin-main [class~="dark:text-slate-300"] {
+  color: #475569 !important;
+}
+
+.admin-main [class~="dark:text-slate-400"] {
+  color: #64748b !important;
+}
+
+.admin-main [class~="dark:text-navy"] {
+  color: #244A76 !important;
+}
+
+.admin-main [class~="dark:text-amber-400"],
+.admin-main [class~="dark:text-gold-light"] {
+  color: #92400e !important;
+}
+
+.admin-main [class~="dark:text-emerald-400"] {
+  color: #047857 !important;
+}
+
+.admin-main [class~="dark:text-red-400"] {
+  color: #b91c1c !important;
+}
+
+.admin-main [class~="dark:bg-navy"],
+.admin-main [class~="dark:bg-navy-light"] {
+  background-color: #f8fafc !important;
+}
+
+.admin-main [class~="dark:bg-navy-lighter"],
+.admin-main [class~="dark:bg-navy-lighter/40"],
+.admin-main [class~="dark:bg-navy-lighter/50"] {
+  background-color: #f1f5f9 !important;
+}
+
+.admin-main [class~="dark:bg-amber-500/10"] {
+  background-color: #fffbeb !important;
+}
+
+.admin-main [class~="dark:bg-emerald-500/10"] {
+  background-color: #ecfdf5 !important;
+}
+
+.admin-main [class~="dark:bg-red-500/10"] {
+  background-color: #fef2f2 !important;
 }
